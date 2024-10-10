@@ -23,4 +23,18 @@ class LoginResponse(BaseModel):
     email:EmailStr 
     password: str 
 
+class PasswordReset(BaseModel):
+    email:EmailStr
+
+class AuthCode(BaseModel):
+    code : str
+
+class updatePassword(BaseModel):
+    email:EmailStr
+    password: str
     
+class UpdatedPassword(BaseModel):
+    email:EmailStr
+    password: str
+
+

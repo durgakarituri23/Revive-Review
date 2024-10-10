@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom'; // Assuming you're using React Router for navigation
 import 'bootstrap/dist/css/bootstrap.min.css';  
 
 const Login = () => {
@@ -71,6 +72,10 @@ const Login = () => {
               <button type="submit" className="btn btn-primary w-100">Login</button>
             </form>
           )}
+          <div className="mt-3 text-center">
+            {/* Add link to Forgot Password page */}
+            <Link to="/forgot-password">Forgot Password?</Link>  {/* Navigates to the Forgot Password page */}
+          </div>
         </div>
       </div>
     </div>
