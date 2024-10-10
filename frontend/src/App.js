@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -9,18 +8,25 @@ import Login from './pages/login'; // Ensure this path is correct
 
 
     function App() {
-        return (
-          <Router>
-          <Header />
-          <main>
-            <Routes>
-              
-            </Routes>
-          </main>
-          <Footer />
-        </Router>
-        );
-      }
+      return (
+        <Router>
+        <Header />
+        <main>
+          <Routes>
+            {/* Define the route for the login page */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Define the route for the register page */}
+            <Route path="/register" element={<Register />} />
+            
+            {/* Add other routes as needed */}
+          </Routes>
+        </main>
+        <Footer />
+      </Router>
+      );
+    }
+
 
 
 export default App;
