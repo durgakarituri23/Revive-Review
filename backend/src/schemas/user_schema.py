@@ -14,3 +14,13 @@ class UserResponseModel(BaseModel):
     last_name: str
     phone: str
     email: EmailStr
+
+class LoginModel(BaseModel):
+    email:EmailStr 
+    password: str 
+
+class LoginResponse(BaseModel):
+    email:EmailStr 
+    password: str 
+
+    
