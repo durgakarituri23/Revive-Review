@@ -28,3 +28,27 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+
+# app= FastAPI() 
+
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=['*'],
+#     allow_headers=['*'],
+
+# )
+
+# @app.post("/register")
+# async def register_user(register: Register):
+#     return await create_register(register)
+
+
+# @app.post("/login")
+# async def check_login(login:Login):
+#     return await validate_login(login)
+    
+
+    
+
