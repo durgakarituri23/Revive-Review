@@ -8,3 +8,7 @@ class User(BaseModel):
     password: str 
 
 
+class Seller(User):
+    business_name:str
+    address: str
+    tax_id: str 

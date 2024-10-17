@@ -49,3 +49,26 @@ class Smtp:
             print(f"login successful {email}")
         except Exception as e:
             print(f"Failed to send email: {e}")
+            
+    def send_auth_code(email,subject,body):
+        sender_email = "randrteamsmtp@gmail.com"  
+        sender_password = "nbvs isya khzx tnjq" 
+
+        message=message = MIMEMultipart()
+        message["From"] = sender_email
+        message["To"] = email
+        message["Subject"] = subject
+
+        message.attach(MIMEText(body, "plain"))
+
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, email, message.as_string())
+            server.quit()
+            print(f"code sent successfully {email}")
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+
+

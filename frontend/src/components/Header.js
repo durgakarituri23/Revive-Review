@@ -16,6 +16,9 @@ const Header = () => {
               <Link className="nav-link text-white" to="/register">Register</Link>
             </li>
             <li className="nav-item">
+              <Link className="nav-link text-white" to="/seller-register">Register Seller</Link>
+            </li>
+            <li className="nav-item">
               <Link className="nav-link text-white" to="/login">Login</Link>
             </li>
             {/* Add other links as needed */}
