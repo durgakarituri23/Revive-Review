@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';  // Import useNavigate for navigation
+
 const ForgotResetPassword = () => {
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -10,12 +11,15 @@ const ForgotResetPassword = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isEmailAuthenticated, setIsEmailAuthenticated] = useState(false);
+
   const navigate = useNavigate();  // Initialize the useNavigate hook
+
   // Step 2: Handle email submission to request reset token
   const handleForgotPassword = async (e) => {
     e.preventDefault(); // Prevent page refresh
     setError('');
     setSuccess(false);
+
     try {
       // Send the forgot password request to the backend
       const response = await axios.post('http://localhost:8000/forgot-password', { email });
@@ -37,11 +41,13 @@ const ForgotResetPassword = () => {
       }
     }
   };
+
   // Step 3: Handle password reset after email is authenticated and token is provided
   const handleResetPassword = async (e) => {
     e.preventDefault(); // Prevent page refresh
     setError('');
     setSuccess(false);
+
     if (resetToken !== response_code) {
       setError("Auth code is not matched");
       return;
@@ -50,15 +56,18 @@ const ForgotResetPassword = () => {
       setError("Passwords do not match");
       return;
     }
+
     try {
       // Make an API call to reset the password using the reset token
       const response = await axios.post(`http://localhost:8000/reset-password`, {
         email: email,
         password: newPassword,
       });
+
       if (response.status === 200) {
         setSuccess(true);
         console.log('Password has been reset successfully:', response.data);  // Print response data
+
         // Redirect to the login page after successful password reset
         navigate('/login');  // Use navigate to redirect the user to the login page
       }
@@ -73,6 +82,7 @@ const ForgotResetPassword = () => {
       }
     }
   };
+
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
@@ -100,6 +110,7 @@ const ForgotResetPassword = () => {
               <div className="alert alert-success" role="alert">
                 Password reset email has been sent. Please check your email for the reset token.
               </div>
+
               <form onSubmit={handleResetPassword}>
                 <div className="mb-3">
                   <label htmlFor="resetToken" className="form-label">Reset Token</label>
@@ -144,4 +155,5 @@ const ForgotResetPassword = () => {
     </div>
   );
 };
+
 export default ForgotResetPassword;
