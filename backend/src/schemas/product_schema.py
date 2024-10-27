@@ -9,3 +9,6 @@ class ProductCreate(BaseModel):
 class ProductResponse(ProductCreate):
     id: str
     images: List[str] = []
+
+class UpdateProductRequest(BaseModel):
+    isApproved: bool
