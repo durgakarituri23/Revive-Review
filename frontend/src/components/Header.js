@@ -18,6 +18,9 @@ const Header = () => {
             <li className="nav-item">
               <Link className="nav-link text-white" to="/login">Login</Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link text-white" to="/cart">Cart</Link>
+            </li>
             {/* Add other links as needed */}
           </ul>
         </nav>
