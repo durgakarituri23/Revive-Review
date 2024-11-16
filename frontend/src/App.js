@@ -5,7 +5,8 @@ import Register from './pages/register';
 import Header from './components/Header';  // Ensure this path is correct
 import Footer from './components/Footer'; 
 import Login from './pages/login'; // Ensure this path is correct
-
+import UnapprovedProductsPage  from './pages/unapproved_products';
+import ManageProducts from './pages/manageProducts';
 
     function App() {
       return (
@@ -18,6 +19,9 @@ import Login from './pages/login'; // Ensure this path is correct
             
             {/* Define the route for the register page */}
             <Route path="/register" element={<Register />} />
+
+            <Route path="/unapproved-products" element={<UnapprovedProductsPage />} />
+            <Route path="/manage-products" element={<ManageProducts/>}/>
             
             {/* Add other routes as needed */}
           </Routes>

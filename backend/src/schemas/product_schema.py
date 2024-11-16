@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from typing import List
+from typing import Optional
+from typing import Any
 
 class ProductCreate(BaseModel):
     product_name: str
@@ -12,3 +14,9 @@ class ProductResponse(ProductCreate):
 
 class UpdateProductRequest(BaseModel):
     isApproved: bool
+
+
+class  UpdateProductDetails(BaseModel):
+  product_name: str
+  description: str
+  price: float

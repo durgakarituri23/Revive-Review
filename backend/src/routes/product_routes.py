@@ -1,9 +1,9 @@
 
 from fastapi import APIRouter,Form,UploadFile,File
 from typing import List
-from src.services.product_service import upload_products,get_unapproved_products,update_product_status
+from src.services.product_service import upload_products,get_unapproved_products,update_product_status,get_approved_products,update_product_info
 from src.models.product import ProductModel 
-from src.schemas.product_schema import UpdateProductRequest
+from src.schemas.product_schema import UpdateProductRequest,UpdateProductDetails
 router = APIRouter()  # Create an APIRouter instance
 from fastapi.staticfiles import StaticFiles
 
@@ -37,7 +37,16 @@ async def upload_product(
 async def get_product():
     return await get_unapproved_products()
 
+@router.get("/products/approved",response_model=List[ProductModel])
+async def get_product():
+    return await get_approved_products()
+
+
 @router.put("/products/{product_id}", response_model=ProductModel)
 async def update_product(product_id: str, isApproved: UpdateProductRequest):
     return await update_product_status(product_id,isApproved.dict())
     
+@router.put("/manage_products/{productId}")
+async def update_product_details(productId: str,  product:UpdateProductDetails):
+
+    return await update_product_info(productId,product.dict())
