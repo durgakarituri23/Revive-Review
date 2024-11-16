@@ -8,3 +8,4 @@ collection =database.User
 admin=database.Admin
 seller=database.Seller
 upload_product=database.ProductDetails
+cart=database.Cart
