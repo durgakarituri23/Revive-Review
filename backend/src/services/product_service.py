@@ -3,7 +3,7 @@ from src.models.product import ProductModel
 import os
 from fastapi import UploadFile
 from src.config.database import upload_product
-from src.schemas.product_schema import UpdateProductRequest
+from src.schemas.product_schema import UpdateProductRequest,UpdateProductDetails
 from typing import List
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
@@ -35,6 +35,12 @@ async def get_unapproved_products():
         products.append(product)
     return products
 
+async def get_approved_products():
+    products = []
+    async for product in upload_product.find({"isApproved": True}):
+        products.append(product)
+    return products
+
 async def update_product_status(product_id: str, isApproved: dict):
     result = upload_product.update_one(
         {"_id": product_id},
@@ -46,3 +52,14 @@ async def update_product_status(product_id: str, isApproved: dict):
     updated_product = await upload_product.find_one({"_id": product_id})
     return ProductModel(id=str(updated_product["_id"]), **updated_product)
 
+async def update_product_info(product_id: str ,product:dict ):
+    result = upload_product.update_one(
+
+       {"_id": product_id},  # Filter by the product's ID
+    {"$set": {
+        "description": product['description'],
+        "price": product['price'],
+        "product_name": product['product_name']
+    }}
+    )
+    return  {"message":"successfull data is updated"}
