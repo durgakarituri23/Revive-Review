@@ -64,3 +64,12 @@ class UpdateUserDetails(BaseModel):
     phone: str
     address: Optional[str]
     postal_code: Optional[str]
+
+class update_cart(BaseModel):
+    email:EmailStr
+    id:str
+    quantity:int
+
+class delete_cart_product(BaseModel):
+    email:EmailStr
+    productId:str
