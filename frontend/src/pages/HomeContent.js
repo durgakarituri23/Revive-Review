@@ -1,9 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const HomeContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('');
   const [sortOption, setSortOption] = useState('');
+  const [products, setProducts] = useState([]);
+
+  // Fetch approved products from the backend
+  const fetchApprovedProducts = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/products/approved");
+      setProducts(response.data);
+    } catch (error) {
+      console.error("Error fetching approved products:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchApprovedProducts();
+  }, []);
 
   // Handle Search
   const handleSearch = (e) => {
@@ -13,8 +29,15 @@ const HomeContent = () => {
 
   // Handle Filter
   const handleFilterChange = (e) => {
-    setFilter(e.target.value);
-    console.log('Filtering by:', e.target.value);
+    const selectedFilter = e.target.value;
+    setFilter(selectedFilter);
+    if (selectedFilter) {
+      const filteredProducts = products.filter(product => product.category === selectedFilter);
+      setProducts(filteredProducts);
+    } else {
+      // Reset to show all products
+      fetchApprovedProducts();
+    }
   };
 
   // Handle Sort
@@ -54,21 +77,29 @@ const HomeContent = () => {
             <option value="category2">Category 2</option>
           </select>
         </div>
-
-        {/* Sort Dropdown */}
-        <div className="ms-3">
-          <label htmlFor="sort" className="form-label me-2">Sort:</label>
-          <select
-            className="form-select"
-            id="sort"
-            value={sortOption}
-            onChange={handleSortChange}
-          >
-            <option value="">Select</option>
-            <option value="price">Price</option>
-            <option value="date">Date</option>
-          </select>
-        </div>
+      </div>
+       {/* Display Products */}
+       <div className="row">
+        {products.length > 0 ? (
+          products.map((product) => (
+            <div key={product._id} className="col-md-4 mb-4">
+              <div className="card">
+                <img
+                  src={`http://localhost:8000/upload_images/${product.images[0]}`}
+                  className="card-img-top"
+                  alt={product.product_name}
+                />
+                <div className="card-body">
+                  <h5 className="card-title">{product.product_name}</h5>
+                  <p className="card-text">{product.description}</p>
+                  <p className="card-text"><strong>Price:</strong> ${product.price.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p>No products found.</p>
+        )}
       </div>
     </div>
   );
