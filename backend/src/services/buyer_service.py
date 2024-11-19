@@ -1,8 +1,8 @@
-from src.config.database import cart
+from src.config.database import cart,payment_methods
 from src.config.database import collection,upload_product
 from fastapi import  HTTPException
 from src.models.cart import Cart 
-from src.schemas.user_schema import update_cart
+from src.schemas.user_schema import update_cart,PaymentMethodrequest,UpdatePaymentStatus
 from fastapi.encoders import jsonable_encoder
 
 async def addTocart(request:Cart):
@@ -118,3 +118,34 @@ async def deleteCartProduct(delete):
         raise HTTPException(status_code=500, detail="Failed to remove product from cart")
 
     return {"message": "Product removed from cart successfully"}  
+
+async def addPaymentMethod(request: PaymentMethodrequest):
+    email = request.email
+    new_method = request.paymentMethod.dict()
+
+    user_payment_methods = await payment_methods.find_one({"email": email})
+
+    if user_payment_methods:
+        # Update the existing user document by appending to the payment methods list
+        await payment_methods.update_one(
+            {"email": email},
+            {"$push": {"methods": new_method}}
+        )
+    else:
+        # If user doesn't exist, create a new document with email and payment methods
+        new_user = {
+            "email": email,
+            "methods": [new_method]
+        }
+        await payment_methods.insert_one(new_user)
+
+    # Return a success response
+    return {"message": "Payment method added successfully."}
+
+async def getCardDetails(email):
+    methods1 = await payment_methods.find({"email": email}).to_list(None)
+    for method in methods1:
+            if "_id" in method:
+                method["_id"] = str(method["_id"])  # Convert ObjectId to string
+   # print(methods1[0]['methods'])
+    return {'methods':methods1[0]['methods']}

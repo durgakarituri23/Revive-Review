@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional,Union
 
 
 class RegisterModel(BaseModel):
@@ -73,3 +73,23 @@ class update_cart(BaseModel):
 class delete_cart_product(BaseModel):
     email:EmailStr
     productId:str
+
+class CardPayment(BaseModel):
+    type: str = "card"
+    cardNumber: str
+    cardName: str
+    cvv: str
+
+class PaypalPayment(BaseModel):
+    type: str = "paypal"
+    paypalEmail: str
+
+PaymentMethod = Union[CardPayment, PaypalPayment]
+
+class PaymentMethodrequest(BaseModel):
+    email: str
+    paymentMethod: PaymentMethod
+
+class UpdatePaymentStatus(BaseModel):
+    email: EmailStr
+    buyed: bool
