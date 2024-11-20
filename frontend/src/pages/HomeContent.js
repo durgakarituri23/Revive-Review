@@ -3,8 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const HomeContent = () => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('');
-  const [sortOption, setSortOption] = useState('');
   const [allProducts, setAllProducts] = useState([]);
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
@@ -24,6 +24,13 @@ const HomeContent = () => {
     fetchApprovedProducts();
   }, []);
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const filteredProducts = allProducts.filter(product =>
+      product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setProducts(filteredProducts);
+  };
 
   const handleFilterChange = (e) => {
     const selectedFilter = e.target.value;
@@ -34,21 +41,13 @@ const HomeContent = () => {
       filteredProducts = allProducts.filter(product => product.category === selectedFilter);
     }
     
-    
+    if (searchQuery) {
+      filteredProducts = filteredProducts.filter(product =>
+        product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
 
     setProducts(filteredProducts);
-  };
-
-  const handleSortChange = (e) => {
-    const selectedSort = e.target.value;
-    setSortOption(selectedSort);
-    let sortedProducts = [...products];
-    if (selectedSort === "price") {
-      sortedProducts.sort((a, b) => a.price - b.price);
-    } else if (selectedSort === "date") {
-      sortedProducts.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-    setProducts(sortedProducts);
   };
 
   const handleAddToCart = async (product) => {
@@ -77,7 +76,16 @@ const HomeContent = () => {
       <h2>Home Page</h2>
 
       <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-        
+        <form className="d-flex" onSubmit={handleSearch}>
+          <input
+            type="text"
+            className="form-control me-2"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button type="submit" className="btn btn-outline-primary">Search</button>
+        </form>
 
         <div className="ms-3">
           <label htmlFor="filter" className="form-label me-2">Filter:</label>
@@ -96,20 +104,7 @@ const HomeContent = () => {
           </select>
         </div>
 
-        <div className="ms-3">
-          <label htmlFor="sort" className="form-label me-2">Sort:</label>
-          <select
-            className="form-select"
-            id="sort"
-            value={sortOption}
-            onChange={handleSortChange}
-          >
-            <option value="">Select</option>
-            <option value="price">Price</option>
-            <option value="date">Date</option>
-          </select>
-        </div>
-      </div>
+       
 
       <div className="row">
         {products.map((product) => (
