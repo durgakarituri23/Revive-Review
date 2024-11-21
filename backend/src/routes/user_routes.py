@@ -2,7 +2,7 @@ from fastapi import APIRouter,Form,UploadFile,File
 from src.models.cart import Cart 
 from src.schemas.user_schema import update_cart,delete_cart_product,PaymentMethodrequest,UpdatePaymentStatus
 from typing import List
-from src.services.buyer_service import addTocart,fetch_cart_items,update_quantity,deleteCartProduct,addPaymentMethod,getCardDetails
+from src.services.buyer_service import addTocart,fetch_cart_items,update_quantity,deleteCartProduct,get_user_address,addPaymentMethod,getCardDetails,updatebuyedStatus
 router = APIRouter() 
 from fastapi import Query
 
@@ -22,6 +22,10 @@ async def update_user_cart(update_cart:update_cart):
 async def delete_cart_product1(delete_cart: delete_cart_product):
     return await deleteCartProduct(delete_cart)
 
+@router.get("/user/details")
+async def user_address(email):
+    return await get_user_address(email)
+
 @router.post("/user/payment-methods")
 async def add_payment_method(request: PaymentMethodrequest):
     return await addPaymentMethod(request)
@@ -30,3 +34,7 @@ async def add_payment_method(request: PaymentMethodrequest):
 async def get_payment_methods(email):
 
    return await getCardDetails(email)
+
+@router.put("/update-item")
+async def update_buyed_status(product:UpdatePaymentStatus):
+    return await updatebuyedStatus(product)

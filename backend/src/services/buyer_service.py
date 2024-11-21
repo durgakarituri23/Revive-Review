@@ -2,11 +2,11 @@ from src.config.database import cart
 from src.config.database import collection,upload_product,payment_methods
 from fastapi import  HTTPException
 from src.models.cart import Cart 
-from src.schemas.user_schema import update_cart,PaymentMethodrequest
+from src.schemas.user_schema import update_cart,PaymentMethodrequest,UpdatePaymentStatus
 from fastapi.encoders import jsonable_encoder
 
 async def addTocart(request:Cart):
-
+ 
     existing_cart = await cart.find_one({"email": request.email})
 
     if existing_cart:
@@ -20,7 +20,7 @@ async def addTocart(request:Cart):
                     cart_item["quantity"] += item.quantity
                     product_found = True
                     break
-
+            
             # If the product wasn't found in the cart, add it as a new product
             if not product_found:
                 existing_cart["products"].append(item.dict())
@@ -45,16 +45,14 @@ async def fetch_cart_items(email):
     if not user_cart:
         raise HTTPException(status_code=404, detail="Cart not found")
     product_ids = [item["productId"] for item in user_cart["products"]]
-
+    
     # Step 3: Fetch product details from the `upload_product` collection
     products = await upload_product.find({"_id": {"$in": product_ids}}).to_list(length=len(product_ids))
     o=0
-
+    
     for product in user_cart['products']:
         products[o]['quantity']=product['quantity']
         o+=1 
-
-
 
     return jsonable_encoder(products)
 
@@ -117,7 +115,14 @@ async def deleteCartProduct(delete):
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Failed to remove product from cart")
 
-    return {"message": "Product removed from cart successfully"}  
+    return {"message": "Product removed from cart successfully"}     
+async def get_user_address(email):
+    user_details=await collection.find_one({"email":email})
+    
+    if 'address' in user_details:
+        return {'name': user_details['first_name']+' '+user_details['last_name'],'phone':user_details['phone'],'address':user_details['address'],"postal_code":user_details['postal_code']}
+    return {'name': user_details['first_name']+' '+user_details['last_name'],'phone':user_details['phone'],'address':"","postal_code":""}
+
 
 async def addPaymentMethod(request: PaymentMethodrequest):
     email = request.email
@@ -149,3 +154,13 @@ async def getCardDetails(email):
                 method["_id"] = str(method["_id"])  # Convert ObjectId to string
    # print(methods1[0]['methods'])
     return {'methods':methods1[0]['methods']}
+
+async def updatebuyedStatus(product:UpdatePaymentStatus):
+    h= await payment_methods.find_one({"email": product.email})
+    result = await cart.update_one(
+        {"email": product.email},
+        {"$set": {"buyed": product.buyed}}
+    )
+
+
+    return {}
