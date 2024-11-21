@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 const HomeContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('');
+  const [sortOption, setSortOption] = useState('');
   const [allProducts, setAllProducts] = useState([]);
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
@@ -49,7 +50,17 @@ const HomeContent = () => {
 
     setProducts(filteredProducts);
   };
-
+  const handleSortChange = (e) => {
+    const selectedSort = e.target.value;
+    setSortOption(selectedSort);
+    let sortedProducts = [...products];
+    if (selectedSort === "price") {
+      sortedProducts.sort((a, b) => a.price - b.price);
+    } else if (selectedSort === "date") {
+      sortedProducts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+    setProducts(sortedProducts);
+  };
   const handleAddToCart = async (product) => {
     const userEmail = localStorage.getItem('userEmail');
     if (!userEmail) {
@@ -104,7 +115,20 @@ const HomeContent = () => {
           </select>
         </div>
 
-       
+        <div className="ms-3">
+          <label htmlFor="sort" className="form-label me-2">Sort:</label>
+          <select
+            className="form-select"
+            id="sort"
+            value={sortOption}
+            onChange={handleSortChange}
+          >
+            <option value="">Select</option>
+            <option value="price">Price</option>
+            <option value="date">Date</option>
+          </select>
+        </div>
+      </div>
 
       <div className="row">
         {products.map((product) => (
