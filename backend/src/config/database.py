@@ -9,3 +9,4 @@ admin=database.Admin
 seller=database.Seller
 upload_product=database.ProductDetails
 cart=database.Cart
+payment_methods=database.Cards
