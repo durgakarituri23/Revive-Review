@@ -21,8 +21,10 @@ class LoginModel(BaseModel):
     password: str 
 
 class LoginResponse(BaseModel):
-    email:EmailStr 
-    password: str 
+    email: EmailStr 
+    password: str
+    access_token: str
+    token_type: str
 
 class PasswordReset(BaseModel):
     email:EmailStr

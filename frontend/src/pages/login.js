@@ -1,36 +1,42 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';  
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const navigate = useNavigate();
+  const { login } = useAuth(); // Use the login function from AuthContext
+
   const handleLogin = async (e) => {
-    e.preventDefault(); // Prevent page refresh
+    e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
-      // Make an API call to log in the user
-      const response = await axios.post('http://localhost:8000/login', {
-        email: email,
-        password: password,
-      });
+      const response = await login(email, password);
+      setSuccess(true);
 
-      // If login is successful
-      if (response.status === 200) {
-        setSuccess(true);
-        console.log('Login successful', response.data);
-      }
+      // Delay navigation slightly to show success message
+      setTimeout(() => {
+        // Navigate based on user role
+        if (response.role === 'seller') {
+          navigate('/seller-dashboard');
+        } else {
+          navigate('/');
+        }
+      }, 1500);
+
     } catch (error) {
-      // Handle error from backend
-      if (error.response && error.response.status === 400) {
-        setError(error.response.data.detail);
-      } else {
-        setError('An error occurred during login');
-      }
+      setError(error.response?.data?.detail || 'Invalid credentials');
+      setSuccess(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -41,7 +47,7 @@ const Login = () => {
           <h2 className="text-center">Login</h2>
           {success ? (
             <div className="alert alert-success" role="alert">
-              Login successful!
+              Login successful! Redirecting...
             </div>
           ) : (
             <form onSubmit={handleLogin}>
@@ -54,6 +60,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
               <div className="mb-3">
@@ -65,12 +72,35 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
-              {error && <div className="alert alert-danger" role="alert">{error}</div>}
-              <button type="submit" className="btn btn-primary w-100">Login</button>
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+              <button
+                type="submit"
+                className="btn btn-primary w-100"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Logging in...
+                  </>
+                ) : 'Login'}
+              </button>
             </form>
           )}
+          <div className="mt-3 text-center">
+            <Link to="/forgot-password" className="text-decoration-none">Forgot Password?</Link>
+          </div>
+          <div className="mt-2 text-center">
+            <span>Don't have an account? </span>
+            <Link to="/register" className="text-decoration-none">Register here</Link>
+          </div>
         </div>
       </div>
     </div>
