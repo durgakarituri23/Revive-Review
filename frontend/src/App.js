@@ -8,6 +8,8 @@ import Login from './pages/login'; // Ensure this path is correct
 import UnapprovedProductsPage  from './pages/unapproved_products';
 import ManageProducts from './pages/manageProducts';
 import Cart from './pages/cart';
+import Home from './pages/home';
+import ManageProfile from './pages/manageProfile';
 
     function App() {
       return (
@@ -16,6 +18,7 @@ import Cart from './pages/cart';
         <main>
           <Routes>
             {/* Define the route for the login page */}
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             
             {/* Define the route for the register page */}
@@ -25,6 +28,7 @@ import Cart from './pages/cart';
             <Route path="/unapproved-products" element={<UnapprovedProductsPage />} />
             <Route path="/manage-products" element={<ManageProducts/>}/>
             
+            <Route path="/manage-profile" element={<ManageProfile />} />
             {/* Add other routes as needed */}
           </Routes>
         </main>

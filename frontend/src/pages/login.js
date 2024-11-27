@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';  
+
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -8,6 +11,8 @@ const Login = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const navigate = useNavigate();
+  
   const handleLogin = async (e) => {
     e.preventDefault(); // Prevent page refresh
     setError('');
@@ -23,6 +28,7 @@ const Login = () => {
       if (response.status === 200) {
         setSuccess(true);
         console.log('Login successful', response.data);
+        navigate('/');
       }
     } catch (error) {
       // Handle error from backend
