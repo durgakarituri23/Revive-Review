@@ -1,6 +1,10 @@
 import './App.css';
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute, SellerRoute, BuyerRoute } from './components/ProtectedRoute';
+
+// Import components
 import Register from './pages/register';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -18,36 +22,96 @@ import ViewOrders from './pages/viewOrders';
 
 function App() {
   return (
-    <Router>
-      <div className="d-flex flex-column min-vh-100"> {/* Wrapper for sticky footer */}
-        <Header />
-        <main className="flex-grow-1"> {/* Makes main content area fill available space */}
-          <Routes>
-            {/* Auth Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotResetPassword />} />
-            <Route path="/seller-register" element={<SellerRegister />} />
+    <AuthProvider>
+      <Router>
+        <div className="d-flex flex-column min-vh-100">
+          <Header />
+          <main className="flex-grow-1">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotResetPassword />} />
+              <Route path="/seller-register" element={<SellerRegister />} />
 
-            {/* Product Routes */}
-            <Route path="/uploadProducts" element={<UploadProducts />} />
-            <Route path="/unapproved-products" element={<UnapprovedProductsPage />} />
-            <Route path="/manage-products" element={<ManageProducts />} />
+              {/* Seller Only Routes */}
+              <Route
+                path="/uploadProducts"
+                element={
+                  <SellerRoute>
+                    <UploadProducts />
+                  </SellerRoute>
+                }
+              />
+              <Route
+                path="/unapproved-products"
+                element={
+                  <SellerRoute>
+                    <UnapprovedProductsPage />
+                  </SellerRoute>
+                }
+              />
+              <Route
+                path="/manage-products"
+                element={
+                  <SellerRoute>
+                    <ManageProducts />
+                  </SellerRoute>
+                }
+              />
 
-            {/* Shopping Routes */}
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/manage-payments" element={<ManagePaymentMethods />} />
-            <Route path="/vieworders" element={<ViewOrders />} />
+              {/* Buyer Only Routes */}
+              <Route
+                path="/cart"
+                element={
+                  <BuyerRoute>
+                    <Cart />
+                  </BuyerRoute>
+                }
+              />
+              <Route
+                path="/payments"
+                element={
+                  <BuyerRoute>
+                    <Payments />
+                  </BuyerRoute>
+                }
+              />
+              <Route
+                path="/manage-payments"
+                element={
+                  <BuyerRoute>
+                    <ManagePaymentMethods />
+                  </BuyerRoute>
+                }
+              />
+              <Route
+                path="/vieworders"
+                element={
+                  <BuyerRoute>
+                    <ViewOrders />
+                  </BuyerRoute>
+                }
+              />
 
-            {/* Home and Fallback Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="*" element={<Navigate to="/" replace />} /> {/* Better 404 handling */}
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+              {/* Protected Home Route */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* 404 Route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

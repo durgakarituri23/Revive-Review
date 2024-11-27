@@ -41,7 +41,7 @@ const HomeContent = () => {
     if (selectedFilter) {
       filteredProducts = allProducts.filter(product => product.category === selectedFilter);
     }
-    
+
     if (searchQuery) {
       filteredProducts = filteredProducts.filter(product =>
         product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -50,6 +50,7 @@ const HomeContent = () => {
 
     setProducts(filteredProducts);
   };
+
   const handleSortChange = (e) => {
     const selectedSort = e.target.value;
     setSortOption(selectedSort);
@@ -61,6 +62,7 @@ const HomeContent = () => {
     }
     setProducts(sortedProducts);
   };
+
   const handleAddToCart = async (product) => {
     const userEmail = localStorage.getItem('userEmail');
     if (!userEmail) {
@@ -86,47 +88,54 @@ const HomeContent = () => {
     <div>
       <h2>Home Page</h2>
 
-      <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-        <form className="d-flex" onSubmit={handleSearch}>
-          <input
-            type="text"
-            className="form-control me-2"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit" className="btn btn-outline-primary">Search</button>
-        </form>
-
-        <div className="ms-3">
-          <label htmlFor="filter" className="form-label me-2">Filter:</label>
-          <select
-            className="form-select"
-            id="filter"
-            value={filter}
-            onChange={handleFilterChange}
-          >
-            <option value="">All</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Clothing">Clothing</option>
-            <option value="Home">Home</option>
-            <option value="Sports">Sports</option>
-            <option value="Books">Books</option>
-          </select>
+      <div className="row align-items-center g-3 mb-4">
+        <div className="col-md-6">
+          <form className="d-flex" onSubmit={handleSearch}>
+            <input
+              type="text"
+              className="form-control me-2"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ minWidth: "300px" }}
+            />
+            <button type="submit" className="btn btn-outline-primary">Search</button>
+          </form>
         </div>
 
-        <div className="ms-3">
-          <label htmlFor="sort" className="form-label me-2">Sort:</label>
-          <select
-            className="form-select"
-            id="sort"
-            value={sortOption}
-            onChange={handleSortChange}
-          >
-            <option value="">Select</option>
-            <option value="price">Price</option>
-            <option value="date">Date</option>
-          </select>
+        <div className="col-md-3">
+          <div className="d-flex align-items-center">
+            <label htmlFor="filter" className="form-label me-2 mb-0">Filter:</label>
+            <select
+              className="form-select"
+              id="filter"
+              value={filter}
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Home">Home</option>
+              <option value="Sports">Sports</option>
+              <option value="Books">Books</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-3">
+          <div className="d-flex align-items-center">
+            <label htmlFor="sort" className="form-label me-2 mb-0">Sort:</label>
+            <select
+              className="form-select"
+              id="sort"
+              value={sortOption}
+              onChange={handleSortChange}
+            >
+              <option value="" disabled selected>Select below options</option>
+              <option value="price">Price</option>
+              <option value="date">Date</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -143,7 +152,6 @@ const HomeContent = () => {
                 <h5 className="card-title">{product.product_name}</h5>
                 <p className="card-text">{product.description}</p>
                 <p className="card-text"><strong>Price:</strong> ${product.price.toFixed(2)}</p>
-
                 <button
                   className="btn btn-primary"
                   onClick={() => handleAddToCart(product)}
