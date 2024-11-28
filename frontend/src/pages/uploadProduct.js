@@ -6,7 +6,7 @@ const UploadProducts = () => {
   const { user } = useAuth();
   const sellerId = user?.business_name;
   const [products, setProducts] = useState([
-    { productName: '', description: '', price: '', category: '', imageFiles: [] }
+    { productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }
   ]);
 
   // Handle changes in product fields
@@ -28,7 +28,7 @@ const UploadProducts = () => {
   const handleAddProduct = () => {
     setProducts([
       ...products,
-      { productName: '', description: '', price: '', category: '', imageFiles: [] }
+      { productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }
     ]);
   };
 
@@ -66,6 +66,7 @@ const UploadProducts = () => {
       formData.append('prices', product.price);
       formData.append('categories', product.category);
       formData.append('seller_ids', sellerId); // Adding seller ID for each product
+      formData.append('stocks', product.stock);
 
       // Append images for each product
       product.imageFiles.forEach((file) => {
@@ -82,7 +83,7 @@ const UploadProducts = () => {
       if (response.ok) {
         // Reset form and file inputs
         products.forEach((_, index) => resetFileInput(index));
-        setProducts([{ productName: '', description: '', price: '', category: '', imageFiles: [] }]);
+        setProducts([{ productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }]);
         alert('Products uploaded successfully!');
       } else {
         const result = await response.json();
@@ -146,6 +147,17 @@ const UploadProducts = () => {
                 <option value="Sports">Sports</option>
                 <option value="Books">Books</option>
               </select>
+            </div>
+            <div className="mb-3">
+              <label>Stock</label>
+              <input
+                type="number"
+                min="0"
+                className="form-control"
+                value={product.stock}
+                onChange={(e) => handleProductChange(productIndex, 'stock', e.target.value)}
+                required
+              />
             </div>
             <div className="mb-3">
               <label>Images</label>

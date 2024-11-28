@@ -5,7 +5,7 @@ import os
 from fastapi import UploadFile, HTTPException
 from src.config.database import upload_product
 from src.schemas.product_schema import UpdateProductRequest, UpdateProductDetails
-from typing import List
+from typing import List, Optional
 from bson import ObjectId
 from uuid import uuid4
 
@@ -24,16 +24,40 @@ async def save_image(image: UploadFile):
 
 
 async def upload_products(product_data: dict, images: List[UploadFile]):
-    print("Service received product_data:", product_data)  # Debug print
-    
-    image_filenames = [await save_image(image) for image in images]
-    product_data["images"] = image_filenames
-    product = ProductModel(**product_data)
-    
-    print("Product model created:", product.dict())  # Debug print
-    
-    await upload_product.insert_one(product.dict(by_alias=True))
-    return product
+    try:
+        print("Service received product_data:", product_data)  # Debug print
+
+        # Save images first
+        image_filenames = []
+        for image in images:
+            if image:  # Check if image exists
+                filename = await save_image(image)
+                image_filenames.append(filename)
+
+        # Create a new dict with all the validated data
+        validated_data = {
+            "product_name": product_data["product_name"],
+            "description": product_data["description"],
+            "price": float(product_data["price"]),
+            "category": product_data["category"],
+            "stock": int(product_data["stock"]),
+            "seller_id": product_data["seller_id"],
+            "images": image_filenames,  # Add the image filenames
+            "isApproved": False,  # Set default approval status
+        }
+
+        # Create ProductModel instance with validated data
+        product = ProductModel(**validated_data)
+
+        print("Product model created:", product.dict())  # Debug print
+
+        # Insert into database
+        await upload_product.insert_one(product.dict(by_alias=True))
+        return product
+
+    except Exception as e:
+        print(f"Error in upload_products: {str(e)}")
+        raise e
 
 
 async def get_seller_products_by_id(seller_id: str):
@@ -77,22 +101,34 @@ async def update_product_status(product_id: str, isApproved: dict):
     return ProductModel(**updated_product)
 
 
-async def update_product_info(product_id: str, product: dict):
-    result = await upload_product.update_one(
-        {"_id": product_id},
-        {
-            "$set": {
-                "description": product["description"],
-                "price": product["price"],
-                "product_name": product["product_name"],
-            }
-        },
-    )
+async def update_product_info(
+    product_id: str, product: dict, new_images: Optional[List[UploadFile]] = None
+):
+    # Prepare update data
+    update_data = {
+        "product_name": product["product_name"],
+        "description": product["description"],
+        "price": product["price"],
+        "category": product["category"],
+        "stock": product["stock"],
+        "status": product["status"],
+    }
+
+    # Handle images if provided
+    if new_images:
+        image_filenames = [await save_image(image) for image in new_images]
+        if product.get("images"):  # If keeping some existing images
+            image_filenames.extend(product["images"])
+        update_data["images"] = image_filenames
+
+    # Update the product
+    result = await upload_product.update_one({"_id": product_id}, {"$set": update_data})
 
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    return {"message": "Product updated successfully"}
+    updated_product = await upload_product.find_one({"_id": product_id})
+    return updated_product
 
 
 # New function to delete seller's product

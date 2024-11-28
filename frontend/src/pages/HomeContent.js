@@ -11,7 +11,7 @@ const HomeContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState([]);
   const navigate = useNavigate();
-  
+
   const ITEMS_PER_PAGE = 6;
 
   const fetchApprovedProducts = async () => {
@@ -161,9 +161,9 @@ const HomeContent = () => {
                   src={`http://localhost:8000/upload_images/${product.images[0]}`}
                   className="card-img-top"
                   alt={product.product_name}
-                  style={{ 
-                    width: "100%", 
-                    height: "100%", 
+                  style={{
+                    width: "100%",
+                    height: "100%",
                     objectFit: "cover"
                   }}
                 />
@@ -177,6 +177,9 @@ const HomeContent = () => {
                   WebkitBoxOrient: "vertical"
                 }}>
                   {product.description}
+                </p>
+                <p className="card-text mb-2">
+                  <strong>Stock:</strong> {product.stock || 0} units
                 </p>
                 <div className="mt-auto">
                   <p className="card-text mb-2">
