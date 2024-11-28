@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 const UploadProducts = () => {
+  // Get logged-in seller's ID from your auth context/state
+  const { user } = useAuth();
+  const sellerId = user?.business_name;
   const [products, setProducts] = useState([
-    { productName: '', description: '', price: '', imageFiles: [] }
+    { productName: '', description: '', price: '', category: '', imageFiles: [] }
   ]);
 
-  // Handle changes in product name, description, and price
+  // Handle changes in product fields
   const handleProductChange = (index, field, value) => {
     const newProducts = [...products];
     newProducts[index][field] = value;
     setProducts(newProducts);
   };
 
-  // Handle image selection for each product
+  // Handle image selection
   const handleImageChange = (e, productIndex) => {
     const newProducts = [...products];
     const files = Array.from(e.target.files);
-    newProducts[productIndex].imageFiles = files;  // Store the files
+    newProducts[productIndex].imageFiles = files;
     setProducts(newProducts);
   };
 
@@ -24,7 +28,7 @@ const UploadProducts = () => {
   const handleAddProduct = () => {
     setProducts([
       ...products,
-      { productName: '', description: '', price: '', imageFiles: [] }
+      { productName: '', description: '', price: '', category: '', imageFiles: [] }
     ]);
   };
 
@@ -33,6 +37,21 @@ const UploadProducts = () => {
     const newProducts = [...products];
     newProducts.splice(index, 1);
     setProducts(newProducts);
+  };
+
+  // Reset file input
+  const resetFileInput = (index) => {
+    const fileInput = document.querySelector(`#file-input-${index}`);
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  // Handle cancel
+  const handleCancel = () => {
+    if (window.confirm('Are you sure you want to cancel? All entered data will be lost.')) {
+      window.location.reload();
+    }
   };
 
   // Handle form submission
@@ -45,6 +64,8 @@ const UploadProducts = () => {
       formData.append('product_names', product.productName);
       formData.append('descriptions', product.description);
       formData.append('prices', product.price);
+      formData.append('categories', product.category);
+      formData.append('seller_ids', sellerId); // Adding seller ID for each product
 
       // Append images for each product
       product.imageFiles.forEach((file) => {
@@ -52,26 +73,25 @@ const UploadProducts = () => {
       });
     });
 
-    // Send the formData to the backend
     try {
-
       const response = await fetch('http://localhost:8000/upload-products', {
         method: 'POST',
         body: formData,
-
       });
 
       if (response.ok) {
-        // alert('Products uploaded successfully!');
-        setProducts([{ productName: '', description: '', price: '', imageFiles: [] }]);
-
+        // Reset form and file inputs
+        products.forEach((_, index) => resetFileInput(index));
+        setProducts([{ productName: '', description: '', price: '', category: '', imageFiles: [] }]);
+        alert('Products uploaded successfully!');
       } else {
         const result = await response.json();
-        // alert(`Error: ${result.detail}`);
+        console.error('Upload failed:', result);
+        alert('Failed to upload products. Please try again.');
       }
     } catch (error) {
       console.error('Error uploading products:', error);
-      // alert('An error occurred while uploading the products');
+      alert('Error uploading products. Please check your connection and try again.');
     }
   };
 
@@ -112,32 +132,74 @@ const UploadProducts = () => {
               />
             </div>
             <div className="mb-3">
+              <label>Category</label>
+              <select
+                className="form-control"
+                value={product.category}
+                onChange={(e) => handleProductChange(productIndex, 'category', e.target.value)}
+                required
+              >
+                <option value="">Select Category</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Home">Home</option>
+                <option value="Sports">Sports</option>
+                <option value="Books">Books</option>
+              </select>
+            </div>
+            <div className="mb-3">
               <label>Images</label>
               <input
+                id={`file-input-${productIndex}`}
                 type="file"
                 accept="image/*"
                 multiple
                 className="form-control"
                 onChange={(e) => handleImageChange(e, productIndex)}
               />
+              {product.imageFiles.length > 0 && (
+                <small className="text-muted">
+                  {product.imageFiles.length} file(s) selected
+                </small>
+              )}
             </div>
-            <div className="d-flex justify-content-between">
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => handleRemoveProduct(productIndex)}
-              >
-                Remove Product
-              </button>
-            </div>
+            {products.length > 1 && (
+              <div className="mb-3">
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => handleRemoveProduct(productIndex)}
+                >
+                  Remove Product
+                </button>
+              </div>
+            )}
             <hr />
           </div>
         ))}
-        <div className="d-flex justify-content-between">
-          <button type="button" className="btn btn-primary mb-3" onClick={handleAddProduct}>
+        <div className="d-flex justify-content-between align-items-center">
+          <button
+            type="button"
+            className="btn btn-primary mb-3"
+            onClick={handleAddProduct}
+          >
             Add Another Product
           </button>
-          <button type="submit" className="btn btn-success mb-3">Upload All Products</button>
+          <div className="mb-3">
+            <button
+              type="button"
+              className="btn btn-danger me-2"
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success"
+            >
+              {products.length > 1 ? 'Upload All Products' : 'Upload Product'}
+            </button>
+          </div>
         </div>
       </form>
     </div>
