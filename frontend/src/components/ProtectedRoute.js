@@ -5,10 +5,6 @@ export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     const { user } = useAuth();
     const location = useLocation();
 
-    // if (loading) {
-    //     return <div>Loading...</div>; // Or your loading component
-    // }
-
     if (!user) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
@@ -54,6 +50,26 @@ export const BuyerRoute = ({ children }) => {
     }
 
     if (user.role !== 'buyer') {
+        return <Navigate to="/" replace />;
+    }
+
+    return children;
+};
+
+// Admin-specific Route
+export const AdminRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    const location = useLocation();
+
+    if (loading) {
+        return <div>Loading...</div>; // Or your loading component
+    }
+
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    if (user.role !== 'admin') {
         return <Navigate to="/" replace />;
     }
 

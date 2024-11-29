@@ -25,10 +25,17 @@ const Login = () => {
       // Delay navigation slightly to show success message
       setTimeout(() => {
         // Navigate based on user role
-        if (response.role === 'seller') {
-          navigate('/seller-dashboard');
-        } else {
-          navigate('/');
+        switch (response.role) {
+          case 'seller':
+            navigate('/seller-dashboard');
+            break;
+          case 'admin':
+            navigate('/admin-dashboard');
+            break;
+          case 'buyer':
+          default:
+            navigate('/');
+            break;
         }
       }, 1500);
 

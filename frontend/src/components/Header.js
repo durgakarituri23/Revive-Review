@@ -24,12 +24,8 @@ const Header = () => {
           <h1>Revive & Rewear</h1>
           <nav>
             <ul className="nav">
-              <li className="nav-item">
-                <Link className="nav-link text-white" to="/">Home</Link>
-              </li>
-
               {!user ? (
-                // Show these items when user is not logged in
+                // Public navigation
                 <>
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/register">Register</Link>
@@ -38,66 +34,52 @@ const Header = () => {
                     <Link className="nav-link text-white" to="/seller-register">Register Seller</Link>
                   </li>
                   <li className="nav-item">
+                    <Link className="nav-link text-white" to="/admin-register">Register Admin</Link>
+                  </li>
+                  <li className="nav-item">
                     <Link className="nav-link text-white" to="/login">Login</Link>
                   </li>
                 </>
               ) : user.role === 'buyer' ? (
-                // Buyer-specific navigation items
+                // Buyer navigation
                 <>
                   <li className="nav-item">
-                    <Link
-                      className={`nav-link text-white ${getActiveClass('/cart')}`}
-                      to="/cart"
-                    >
-                      Cart
-                    </Link>
+                    <Link className="nav-link text-white" to="/">Home</Link>
                   </li>
                   <li className="nav-item">
-                    <Link
-                      className={`nav-link text-white ${getActiveClass('/manage-payments')}`}
-                      to="/manage-payments"
-                    >
-                      Payment Methods
-                    </Link>
+                    <Link className="nav-link text-white" to="/cart">Cart</Link>
                   </li>
                   <li className="nav-item">
-                    <Link
-                      className={`nav-link text-white ${getActiveClass('/vieworders')}`}
-                      to="/vieworders"
-                    >
-                      My Orders
-                    </Link>
+                    <Link className="nav-link text-white" to="/manage-payments">Payment Methods</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/vieworders">My Orders</Link>
                   </li>
                 </>
-              ) : (
-                // Seller-specific navigation items
+              ) : user.role === 'seller' ? (
+                // Seller navigation
                 <>
                   <li className="nav-item">
-                    <Link
-                      className={`nav-link text-white ${getActiveClass('/uploadProducts')}`}
-                      to="/uploadProducts"
-                    >
-                      Upload Products
-                    </Link>
+                    <Link className="nav-link text-white" to="/">Home</Link>
                   </li>
                   <li className="nav-item">
-                    <Link
-                      className={`nav-link text-white ${getActiveClass('/manage-products')}`}
-                      to="/manage-products"
-                    >
-                      Manage Products
-                    </Link>
+                    <Link className="nav-link text-white" to="/uploadProducts">Upload Products</Link>
                   </li>
                   <li className="nav-item">
-                    <Link
-                      className={`nav-link text-white ${getActiveClass('/unapproved-products')}`}
-                      to="/unapproved-products"
-                    >
-                      Unapproved Products
-                    </Link>
+                    <Link className="nav-link text-white" to="/manage-products">Manage Products</Link>
                   </li>
                 </>
-              )}
+              ) : user.role === 'admin' ? (
+                // Admin navigation
+                <>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/">Home</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/unapproved-products">Approve Products</Link>
+                  </li>
+                </>
+              ) : null}
 
               {/* Show user info and logout if logged in */}
               {user && (
