@@ -8,8 +8,11 @@ const HomeContent = () => {
   const [sortOption, setSortOption] = useState('');
   const [allProducts, setAllProducts] = useState([]);
   const [products, setProducts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState([]);
   const navigate = useNavigate();
+
+  const ITEMS_PER_PAGE = 6;
 
   const fetchApprovedProducts = async () => {
     try {
@@ -31,6 +34,7 @@ const HomeContent = () => {
       product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setProducts(filteredProducts);
+    setCurrentPage(1);
   };
 
   const handleFilterChange = (e) => {
@@ -49,6 +53,7 @@ const HomeContent = () => {
     }
 
     setProducts(filteredProducts);
+    setCurrentPage(1);
   };
 
   const handleSortChange = (e) => {
@@ -75,18 +80,26 @@ const HomeContent = () => {
         email: userEmail,
         products: [{ productId: product._id, quantity: 1 }],
       });
-
-      // alert("Product added to cart successfully!");
-      // navigate('/cart');
     } catch (error) {
       console.error("Error adding product to cart:", error);
       alert("Failed to add product to cart.");
     }
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentProducts = products.slice(startIndex, endIndex);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div>
-      <h2>Home Page</h2>
+    <div className="container py-4">
+      <h2 className="mb-4">Home Page</h2>
 
       <div className="row align-items-center g-3 mb-4">
         <div className="col-md-6">
@@ -131,7 +144,7 @@ const HomeContent = () => {
               value={sortOption}
               onChange={handleSortChange}
             >
-              <option value="" disabled selected>Select below options</option>
+              <option value="" disabled>Select below options</option>
               <option value="price">Price</option>
               <option value="date">Date</option>
             </select>
@@ -140,29 +153,88 @@ const HomeContent = () => {
       </div>
 
       <div className="row">
-        {products.map((product) => (
+        {currentProducts.map((product) => (
           <div key={product._id} className="col-md-4 mb-4">
-            <div className="card">
-              <img
-                src={`http://localhost:8000/upload_images/${product.images[0]}`}
-                className="card-img-top"
-                alt={product.product_name}
-              />
-              <div className="card-body">
+            <div className="card h-100" style={{ height: "500px" }}>
+              <div style={{ height: "200px", overflow: "hidden" }}>
+                <img
+                  src={`http://localhost:8000/upload_images/${product.images[0]}`}
+                  className="card-img-top"
+                  alt={product.product_name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover"
+                  }}
+                />
+              </div>
+              <div className="card-body d-flex flex-column">
                 <h5 className="card-title">{product.product_name}</h5>
-                <p className="card-text">{product.description}</p>
-                <p className="card-text"><strong>Price:</strong> ${product.price.toFixed(2)}</p>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  Add to Cart
-                </button>
+                <p className="card-text flex-grow-1" style={{
+                  overflow: "hidden",
+                  display: "-webkit-box",
+                  WebkitLineClamp: "3",
+                  WebkitBoxOrient: "vertical"
+                }}>
+                  {product.description}
+                </p>
+                <p className="card-text mb-2">
+                  <strong>Stock:</strong> {product.stock || 0} units
+                </p>
+                <div className="mt-auto">
+                  <p className="card-text mb-2">
+                    <strong>Price:</strong> ${product.price.toFixed(2)}
+                  </p>
+                  <button
+                    className="btn btn-primary w-100"
+                    onClick={() => handleAddToCart(product)}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <nav className="mt-4">
+          <ul className="pagination justify-content-center">
+            <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+            </li>
+            {[...Array(totalPages)].map((_, index) => (
+              <li
+                key={index + 1}
+                className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => handlePageChange(index + 1)}
+                >
+                  {index + 1}
+                </button>
+              </li>
+            ))}
+            <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
     </div>
   );
 };

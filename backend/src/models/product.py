@@ -7,11 +7,12 @@ class ProductModel(BaseModel):
     product_name: str
     description: str
     price: float
-    seller_id:  Optional[str] = None
-    category: Optional[str]=None
-
-    images: List[str] = []
-    isApproved: Optional[bool] =  False
+    seller_id: Optional[str] = None
+    category: Optional[str] = None
+    stock: Optional[int] = 0
+    status: Optional[str] = "active"
+    images: List[str] = Field(default_factory=list)
+    isApproved: Optional[bool] = False
 
     class Config:
         allow_population_by_field_name = True
