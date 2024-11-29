@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional,Union
-
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, Literal, List, Union, Dict
+from datetime import datetime
 
 class RegisterModel(BaseModel):
     first_name: str
@@ -8,38 +8,8 @@ class RegisterModel(BaseModel):
     phone: str
     email: EmailStr
     password: str
-
-
-class UserResponseModel(BaseModel):
-    first_name: str
-    last_name: str
-    phone: str
-    email: EmailStr
-
-class LoginModel(BaseModel):
-    email:EmailStr 
-    password: str 
-
-class LoginResponse(BaseModel):
-    email: EmailStr 
-    password: str
-    access_token: str
-    token_type: str
-
-class PasswordReset(BaseModel):
-    email:EmailStr
-
-class AuthCode(BaseModel):
-    code : str
-
-class updatePassword(BaseModel):
-    email:EmailStr
-    password: str
-    
-class UpdatedPassword(BaseModel):
-    email:EmailStr
-    password: str
-
+    role: Optional[Literal["buyer", "seller", "admin"]] = "buyer"
+    admin_code: Optional[str] = None
 
 class RegisterSeller(BaseModel):
     first_name: str
@@ -47,34 +17,123 @@ class RegisterSeller(BaseModel):
     phone: str
     email: EmailStr
     password: str
-    business_name:str
+    business_name: str
     address: str
-    tax_id: str 
+    tax_id: str
 
+class UserResponseModel(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr
+    role: str = "buyer"
+    business_name: Optional[str] = None
+    tax_id: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+
+class LoginModel(BaseModel):
+    email: EmailStr
+    password: str
+
+class LoginResponse(BaseModel):
+    email: EmailStr
+    access_token: str
+    token_type: str
+    role: str
+
+class PasswordReset(BaseModel):
+    email: EmailStr
+
+class AuthCode(BaseModel):
+    code: str
+
+class updatePassword(BaseModel):
+    email: EmailStr
+    password: str
+
+class UpdatedPassword(BaseModel):
+    email: EmailStr
+    password: str
 
 class UserDetails(BaseModel):
     first_name: str
     last_name: str
     phone: str
-    address: Optional[str]
-    postal_code: Optional[str]
+    role: str
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+    business_name: Optional[str] = None
+    tax_id: Optional[str] = None
 
 class UpdateUserDetails(BaseModel):
+    email: EmailStr
     first_name: str
     last_name: str
-    email:EmailStr
     phone: str
-    address: Optional[str]
-    postal_code: Optional[str]
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+    business_name: Optional[str] = None
+    tax_id: Optional[str] = None
+
+# New schemas for admin operations
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr
+    password: str
+    role: Literal["buyer", "seller", "admin"]
+    business_name: Optional[str] = None
+    tax_id: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[Literal["buyer", "seller", "admin"]] = None
+    business_name: Optional[str] = None
+    tax_id: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+
+class UserRole(BaseModel):
+    role: Literal["buyer", "seller", "admin"]
+
+class UserSearchResponse(BaseModel):
+    id: str
+    first_name: str
+    last_name: str
+    email: EmailStr
+    role: str
+    created_at: Optional[datetime] = None
+
+class UserStats(BaseModel):
+    total_users: int
+    buyers: int
+    sellers: int
+    admins: int
+    active_users: Optional[int] = None
+
+class BulkUserUpdate(BaseModel):
+    user_ids: List[str]
+    update_data: Dict[str, Union[str, int, bool]]
+
+class DeleteUserResponse(BaseModel):
+    message: str
+    deleted_user_id: str
 
 class update_cart(BaseModel):
-    email:EmailStr
-    id:str
-    quantity:int
+    email: EmailStr
+    id: str
+    quantity: int
 
 class delete_cart_product(BaseModel):
-    email:EmailStr
-    productId:str
+    email: EmailStr
+    productId: str
 
 class CardPayment(BaseModel):
     type: str = "card"
@@ -84,7 +143,7 @@ class CardPayment(BaseModel):
 
 class PaypalPayment(BaseModel):
     type: str = "paypal"
-    paypalEmail: str  
+    paypalEmail: str
 
 PaymentMethod = Union[CardPayment, PaypalPayment]
 
@@ -95,3 +154,34 @@ class PaymentMethodrequest(BaseModel):
 class UpdatePaymentStatus(BaseModel):
     email: EmailStr
     buyed: bool
+
+# Response Models
+class GenericResponse(BaseModel):
+    message: str
+    status: bool = True
+
+class ErrorResponse(BaseModel):
+    detail: str
+    status: bool = False
+
+class PaginatedResponse(BaseModel):
+    total: int
+    page: int
+    per_page: int
+    items: List[UserResponseModel]
+
+# Optional: Additional validation models
+class PasswordChangeRequest(BaseModel):
+    old_password: str
+    new_password: str
+    confirm_password: str
+
+    @classmethod
+    def validate_passwords_match(cls, new_password: str, confirm_password: str) -> bool:
+        return new_password == confirm_password
+
+class UserFilter(BaseModel):
+    role: Optional[str] = None
+    created_after: Optional[datetime] = None
+    created_before: Optional[datetime] = None
+    is_active: Optional[bool] = None
