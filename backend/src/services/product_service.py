@@ -1,10 +1,15 @@
 # src/services/product_service.py
 from motor.motor_asyncio import AsyncIOMotorClient
-from src.models.product import ProductModel
+from src.models.product import ProductModel, Category
 import os
 from fastapi import UploadFile, HTTPException
 from src.config.database import upload_product
-from src.schemas.product_schema import UpdateProductRequest, UpdateProductDetails
+from src.schemas.product_schema import (
+    UpdateProductRequest,
+    UpdateProductDetails,
+    CategoryCreate,
+    CategoryUpdate,
+)
 from typing import List, Optional
 from bson import ObjectId
 from uuid import uuid4
