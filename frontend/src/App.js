@@ -20,6 +20,8 @@ import Cart from './pages/cart';
 import Payments from './pages/payments';
 import ManagePaymentMethods from './pages/managepaymentMethods';
 import ViewOrders from './pages/viewOrders';
+import SellerHome from './pages/SellerHome';
+import AdminHome  from './pages/AdminHome';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -29,12 +31,12 @@ const RoleBasedHome = () => {
 
   switch (user.role) {
     case 'seller':
-      return <ManageProducts />;  // Sellers see their products
+      return <SellerHome />;  // seller default home page
     case 'admin':
-      return <UnapprovedProductsPage />; // Admins see products to approve
+      return <AdminHome />;   // admin default home page
     case 'buyer':
     default:
-      return <Home />; // Buyers see all approved products
+      return <Home />;   // buyer default home page
   }
 };
 
