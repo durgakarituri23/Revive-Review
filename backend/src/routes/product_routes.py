@@ -7,6 +7,7 @@ from src.services.product_service import (
     get_approved_products,
     update_product_info,
     get_seller_products,
+    fetch_product_by_id
 )
 from src.services.category_service import (
     create_category,
@@ -94,6 +95,14 @@ async def update_product(product_id: str, isApproved: UpdateProductRequest):
     return await update_product_status(product_id, isApproved.dict())
 
 
+@router.get("/products/{product_id}", response_model=ProductModel)
+async def get_single_product(product_id: str):  # Changed function name
+    product = await fetch_product_by_id(product_id)  # Changed service function name
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+
 @router.put("/manage_products/{productId}")
 async def update_product_details(
     productId: str,
@@ -112,9 +121,7 @@ async def update_product_details(
         "images": existing_images if existing_images else [],
     }
 
-    updated_product = await update_product_info(
-        productId, product_data, new_images
-    )
+    updated_product = await update_product_info(productId, product_data, new_images)
     return updated_product
 
 

@@ -84,6 +84,13 @@ async def get_seller_products(seller_id: str):
     return products
 
 
+async def fetch_product_by_id(product_id: str):  # Changed function name
+    product = await upload_product.find_one({"_id": product_id})
+    if product:
+        return ProductModel(**product)
+    return None
+
+
 async def update_product_status(product_id: str, isApproved: dict):
     result = await upload_product.update_one(
         {"_id": product_id}, {"$set": {"isApproved": isApproved["isApproved"]}}

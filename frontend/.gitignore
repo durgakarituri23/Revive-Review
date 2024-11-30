@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+../node_modules
 /.pnp
 .pnp.js
 
@@ -25,5 +25,4 @@ yarn-error.log*
 # Python compiled files
 *.py[cod]
 *.pyc
-__pycache__/
-
+*/__pycache__/*
