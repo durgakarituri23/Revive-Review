@@ -11,7 +11,7 @@ import Footer from './components/Footer';
 import Login from './pages/login';
 import ForgotResetPassword from './pages/forgot-password';
 import SellerRegister from './pages/seller_register';
-import AdminRegister from './pages/adminRegister'; 
+import AdminRegister from './pages/adminRegister';
 import UploadProducts from './pages/uploadProduct';
 import Home from './pages/home';
 import UnapprovedProductsPage from './pages/unapproved_products';
@@ -19,9 +19,10 @@ import ManageProducts from './pages/manageProducts';
 import Cart from './pages/cart';
 import Payments from './pages/payments';
 import ManagePaymentMethods from './pages/managepaymentMethods';
+import ManageCategories from './pages/manageCategories';
 import ViewOrders from './pages/viewOrders';
 import SellerHome from './pages/SellerHome';
-import AdminHome  from './pages/AdminHome';
+import AdminHome from './pages/AdminHome';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -79,6 +80,15 @@ function App() {
                 element={
                   <AdminRoute>
                     <UnapprovedProductsPage />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/manage-categories"
+                element={
+                  <AdminRoute>
+                    <ManageCategories />
                   </AdminRoute>
                 }
               />

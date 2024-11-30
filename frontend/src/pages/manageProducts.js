@@ -16,16 +16,11 @@ const ManageProducts = () => {
   const [newImages, setNewImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
 
-  const categories = [
-    'Electronics',
-    'Clothing',
-    'Home',
-    'Sports',
-    'Books'
-  ];
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
@@ -34,6 +29,15 @@ const ManageProducts = () => {
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/categories');
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   };
 
@@ -188,8 +192,8 @@ const ManageProducts = () => {
                         >
                           <option value="">Select Category</option>
                           {categories.map(category => (
-                            <option key={category} value={category}>
-                              {category}
+                            <option key={category._id} value={category.name}>
+                              {category.name}
                             </option>
                           ))}
                         </select>

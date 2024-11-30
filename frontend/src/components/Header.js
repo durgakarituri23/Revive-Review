@@ -78,6 +78,11 @@ const Header = () => {
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/unapproved-products">Approve Products</Link>
                   </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/manage-categories">
+                      Manage Categories
+                    </Link>
+                  </li>
                 </>
               ) : null}
 

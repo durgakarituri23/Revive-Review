@@ -26,6 +26,7 @@ const HomeContent = () => {
 
   useEffect(() => {
     fetchApprovedProducts();
+    fetchCategories();
   }, []);
 
   const handleSearch = (e) => {
@@ -35,6 +36,17 @@ const HomeContent = () => {
     );
     setProducts(filteredProducts);
     setCurrentPage(1);
+  };
+
+  const [categories, setCategories] = useState([]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/categories");
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
   };
 
   const handleFilterChange = (e) => {
@@ -126,11 +138,11 @@ const HomeContent = () => {
               onChange={handleFilterChange}
             >
               <option value="">All</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Clothing">Clothing</option>
-              <option value="Home">Home</option>
-              <option value="Sports">Sports</option>
-              <option value="Books">Books</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>

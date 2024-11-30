@@ -1,13 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const UploadProducts = () => {
   // Get logged-in seller's ID from your auth context/state
   const { user } = useAuth();
   const sellerId = user?.business_name;
+  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([
     { productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }
   ]);
+
+
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Handle changes in product fields
   const handleProductChange = (index, field, value) => {
@@ -141,11 +162,11 @@ const UploadProducts = () => {
                 required
               >
                 <option value="">Select Category</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Clothing">Clothing</option>
-                <option value="Home">Home</option>
-                <option value="Sports">Sports</option>
-                <option value="Books">Books</option>
+                {categories.map((category) => (
+                  <option key={category._id} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="mb-3">
