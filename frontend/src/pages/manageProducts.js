@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+// import { Carousel, Card } from 'react-bootstrap';
 
 const ManageProducts = () => {
   const [products, setProducts] = useState([]);
@@ -53,10 +54,12 @@ const ManageProducts = () => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    setNewImages([file]);
-    const preview = URL.createObjectURL(file);
-    setPreviewImages([preview]);
+    const files = Array.from(e.target.files);
+    setNewImages(prevImages => [...prevImages, ...files]);
+
+    // Create preview URLs for new images
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setPreviewImages(prevPreviews => [...prevPreviews, ...newPreviews]);
   };
 
   const handleInputChange = (e) => {
@@ -82,13 +85,14 @@ const ManageProducts = () => {
       formData.append('price', updatedProduct.price);
       formData.append('category', updatedProduct.category);
 
-      if (updatedProduct.images.length > 0) {
-        formData.append('existing_images', updatedProduct.images[0]);
-      }
+      updatedProduct.images.forEach((image, index) => {
+        formData.append(`existing_images`, image);
+      });
 
-      if (newImages.length > 0) {
-        formData.append('new_images', newImages[0]);
-      }
+      // Append new images
+      newImages.forEach((file, index) => {
+        formData.append(`new_images`, file);
+      });
 
       await axios.put(
         `http://localhost:8000/manage_products/${productId}`,
@@ -112,6 +116,12 @@ const ManageProducts = () => {
   const handleCancelEdit = () => {
     setEditingProductId(null);
     setNewImages([]);
+    // Clean up preview URLs
+    previewImages.forEach(preview => {
+      if (preview.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+    });
     setPreviewImages([]);
     setUpdatedProduct({
       product_name: '',
@@ -123,11 +133,12 @@ const ManageProducts = () => {
   };
 
   const handleDeleteImage = (index) => {
-    setPreviewImages([]);
-    setNewImages([]);
+    // Remove image from both arrays
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    setNewImages(prev => prev.filter((_, i) => i !== index));
     setUpdatedProduct(prev => ({
       ...prev,
-      images: []
+      images: prev.images.filter((_, i) => i !== index)
     }));
   };
 

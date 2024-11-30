@@ -190,9 +190,7 @@ const HomeContent = () => {
                 }}>
                   {product.description}
                 </p>
-                <p className="card-text mb-2">
-                  <strong>Stock:</strong> {product.stock || 0} units
-                </p>
+                
                 <div className="mt-auto">
                   <p className="card-text mb-2">
                     <strong>Price:</strong> ${product.price.toFixed(2)}

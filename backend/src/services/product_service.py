@@ -106,10 +106,18 @@ async def update_product_info(
         "category": product["category"],
     }
 
+    # Handle images
     if new_images:
-        image_filenames = [await save_image(image) for image in new_images]
+        image_filenames = []
+        for image in new_images:
+            if image:
+                filename = await save_image(image)
+                image_filenames.append(filename)
+
+        # Combine with existing images
         if product.get("images"):
             image_filenames.extend(product["images"])
+
         update_data["images"] = image_filenames
 
     result = await upload_product.update_one({"_id": product_id}, {"$set": update_data})

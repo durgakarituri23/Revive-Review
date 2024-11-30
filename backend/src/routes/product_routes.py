@@ -101,19 +101,19 @@ async def update_product_details(
     description: str = Form(...),
     price: float = Form(...),
     category: Optional[str] = Form(None),
-    existing_images: Optional[str] = Form(None),
-    new_images: Optional[UploadFile] = File(None),
+    existing_images: List[str] = Form(None),
+    new_images: List[UploadFile] = File(None),
 ):
     product_data = {
         "product_name": product_name,
         "description": description,
         "price": price,
         "category": category,
-        "images": [existing_images] if existing_images else [],
+        "images": existing_images if existing_images else [],
     }
 
     updated_product = await update_product_info(
-        productId, product_data, [new_images] if new_images else None
+        productId, product_data, new_images
     )
     return updated_product
 
