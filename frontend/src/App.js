@@ -25,6 +25,8 @@ import ViewOrders from './pages/viewOrders';
 import SellerHome from './pages/SellerHome';
 import AdminHome from './pages/AdminHome';
 import BuyerProductDetail from './pages/buyerProductDetail';
+import EditProduct from './pages/editProduct';
+import ProductReview from './pages/ProductReview';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -76,12 +78,30 @@ function App() {
                 }
               />
 
+              <Route
+                path="/edit-product/:productId"
+                element={
+                  <SellerRoute>
+                    <EditProduct />
+                  </SellerRoute>
+                }
+              />
+
               {/* Admin Only Routes */}
               <Route
                 path="/unapproved-products"
                 element={
                   <AdminRoute>
                     <UnapprovedProductsPage />
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/review-product/:productId"
+                element={
+                  <AdminRoute>
+                    <ProductReview />
                   </AdminRoute>
                 }
               />
