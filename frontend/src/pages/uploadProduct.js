@@ -1,73 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const UploadProducts = () => {
-  // Get logged-in seller's ID from your auth context/state
   const { user } = useAuth();
   const sellerId = user?.business_name;
+  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([
-    { productName: '', description: '', price: '', category: '', imageFiles: [] }
+    { productName: '', description: '', price: '', category: '', imageFiles: [], imagePreviews: [] }
   ]);
 
-  // Handle changes in product fields
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   const handleProductChange = (index, field, value) => {
     const newProducts = [...products];
     newProducts[index][field] = value;
     setProducts(newProducts);
   };
 
-  // Handle image selection
   const handleImageChange = (e, productIndex) => {
-    const newProducts = [...products];
     const files = Array.from(e.target.files);
-    newProducts[productIndex].imageFiles = files;
+    const newProducts = [...products];
+
+    // Create previews for the new images
+    const previews = files.map(file => URL.createObjectURL(file));
+
+    newProducts[productIndex].imageFiles = [
+      ...newProducts[productIndex].imageFiles,
+      ...files
+    ];
+    newProducts[productIndex].imagePreviews = [
+      ...newProducts[productIndex].imagePreviews,
+      ...previews
+    ];
+
     setProducts(newProducts);
   };
 
-  // Add a new product block
+  const handleRemoveImage = (productIndex, imageIndex) => {
+    const newProducts = [...products];
+
+    // Clean up the preview URL before removing
+    URL.revokeObjectURL(newProducts[productIndex].imagePreviews[imageIndex]);
+
+    // Remove the file and preview
+    newProducts[productIndex].imageFiles = newProducts[productIndex].imageFiles.filter((_, index) => index !== imageIndex);
+    newProducts[productIndex].imagePreviews = newProducts[productIndex].imagePreviews.filter((_, index) => index !== imageIndex);
+
+    setProducts(newProducts);
+  };
+
   const handleAddProduct = () => {
     setProducts([
       ...products,
-      { productName: '', description: '', price: '', category: '', imageFiles: [] }
+      { productName: '', description: '', price: '', category: '', imageFiles: [], imagePreviews: [] }
     ]);
   };
 
-  // Remove a product block
   const handleRemoveProduct = (index) => {
+    // Clean up all preview URLs for the product being removed
+    products[index].imagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+    
     const newProducts = [...products];
     newProducts.splice(index, 1);
     setProducts(newProducts);
   };
 
-  // Reset file input
-  const resetFileInput = (index) => {
-    const fileInput = document.querySelector(`#file-input-${index}`);
-    if (fileInput) {
-      fileInput.value = '';
-    }
+  const resetFileInputs = () => {
+    products.forEach((_, index) => {
+      const fileInput = document.querySelector(`#file-input-${index}`);
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    });
   };
 
-  // Handle cancel
   const handleCancel = () => {
     if (window.confirm('Are you sure you want to cancel? All entered data will be lost.')) {
-      window.location.reload();
+      // Clean up all preview URLs
+      products.forEach(product => {
+        product.imagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+      });
+      resetFileInputs();
+      setProducts([{
+        productName: '',
+        description: '',
+        price: '',
+        category: '',
+        imageFiles: [],
+        imagePreviews: []
+      }]);
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
 
-    // Append product details to formData
     products.forEach((product, productIndex) => {
       formData.append('product_names', product.productName);
       formData.append('descriptions', product.description);
       formData.append('prices', product.price);
       formData.append('categories', product.category);
-      formData.append('seller_ids', sellerId); // Adding seller ID for each product
+      formData.append('seller_ids', sellerId);
 
-      // Append images for each product
       product.imageFiles.forEach((file) => {
         formData.append('images', file);
       });
@@ -80,9 +131,24 @@ const UploadProducts = () => {
       });
 
       if (response.ok) {
-        // Reset form and file inputs
-        products.forEach((_, index) => resetFileInput(index));
-        setProducts([{ productName: '', description: '', price: '', category: '', imageFiles: [] }]);
+        // Clean up preview URLs
+        products.forEach(product => {
+          product.imagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+        });
+
+        // Reset file inputs
+        resetFileInputs();
+
+        // Reset form state
+        setProducts([{
+          productName: '',
+          description: '',
+          price: '',
+          category: '',
+          imageFiles: [],
+          imagePreviews: []
+        }]);
+
         alert('Products uploaded successfully!');
       } else {
         const result = await response.json();
@@ -140,11 +206,11 @@ const UploadProducts = () => {
                 required
               >
                 <option value="">Select Category</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Clothing">Clothing</option>
-                <option value="Home">Home</option>
-                <option value="Sports">Sports</option>
-                <option value="Books">Books</option>
+                {categories.map((category) => (
+                  <option key={category._id} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="mb-3">
@@ -157,10 +223,32 @@ const UploadProducts = () => {
                 className="form-control"
                 onChange={(e) => handleImageChange(e, productIndex)}
               />
-              {product.imageFiles.length > 0 && (
-                <small className="text-muted">
-                  {product.imageFiles.length} file(s) selected
-                </small>
+              {product.imagePreviews.length > 0 && (
+                <div className="mt-3">
+                  <div className="d-flex flex-wrap gap-2">
+                    {product.imagePreviews.map((preview, imageIndex) => (
+                      <div key={imageIndex} className="position-relative">
+                        <img
+                          src={preview}
+                          alt={`Preview ${imageIndex + 1}`}
+                          style={{
+                            width: '100px',
+                            height: '100px',
+                            objectFit: 'cover'
+                          }}
+                          className="rounded"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm position-absolute top-0 end-0"
+                          onClick={() => handleRemoveImage(productIndex, imageIndex)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
             {products.length > 1 && (
