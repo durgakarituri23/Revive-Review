@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends
+from datetime import datetime
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends, Body
 from typing import List, Optional
+from src.config.database import product_collection
 from src.services.product_service import (
     upload_products,
     get_unapproved_products,
@@ -7,7 +9,8 @@ from src.services.product_service import (
     get_approved_products,
     update_product_info,
     get_seller_products,
-    fetch_product_by_id
+    fetch_product_by_id,
+    review_product,
 )
 from src.services.category_service import (
     create_category,
@@ -41,18 +44,14 @@ async def upload_product(
         image_index = 0
         images_per_product = len(images) // len(product_names)
 
-        for i, (
-            product_name,
-            description,
-            price,
-            category,
-            seller_id,
-        ) in enumerate(
+        for i, (product_name, description, price, category, seller_id) in enumerate(
             zip(product_names, descriptions, prices, categories, seller_ids)
         ):
+            # Get images for this product
             product_images = images[image_index : image_index + images_per_product]
             image_index += images_per_product
 
+            # Prepare product data
             product_data = {
                 "product_name": product_name,
                 "description": description,
@@ -61,6 +60,7 @@ async def upload_product(
                 "seller_id": seller_id,
             }
 
+            # Upload product
             product = await upload_products(product_data, product_images)
             products.append(product)
 
@@ -103,6 +103,30 @@ async def get_single_product(product_id: str):  # Changed function name
     return product
 
 
+@router.put("/products/{product_id}/resubmit", response_model=ProductModel)
+async def resubmit_product(product_id: str, update_data: dict = Body(...)):
+    try:
+        result = await product_collection.update_one(
+            {"_id": product_id},
+            {
+                "$set": {
+                    "status": "pending",  # Change to pending for admin review
+                    "admin_comments": None,  # Clear previous comments
+                    "reviewed_at": None,  # Clear previous review timestamp
+                }
+            },
+        )
+
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        updated_product = await product_collection.find_one({"_id": product_id})
+        return ProductModel(**updated_product)
+    except Exception as e:
+        print(f"Error in resubmit_product: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.put("/manage_products/{productId}")
 async def update_product_details(
     productId: str,
@@ -123,6 +147,15 @@ async def update_product_details(
 
     updated_product = await update_product_info(productId, product_data, new_images)
     return updated_product
+
+
+@router.put("/products/{product_id}/review", response_model=ProductModel)
+async def review_product_endpoint(
+    product_id: str,
+    review_data: UpdateProductRequest = Body(...),  # Change this line
+):
+    """Review a product with admin comments"""
+    return await review_product(product_id, review_data.dict())
 
 
 @router.get("/categories", response_description="Get all categories")

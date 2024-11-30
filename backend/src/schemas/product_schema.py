@@ -19,6 +19,8 @@ class ProductResponse(ProductCreate):
 
 class UpdateProductRequest(BaseModel):
     isApproved: bool
+    admin_comments: str
+    review_status: Optional[str] = None
 
 
 class UpdateProductDetails(BaseModel):
@@ -27,6 +29,15 @@ class UpdateProductDetails(BaseModel):
     price: float
     category: Optional[str] = None
     images: Optional[List[str]] = None
+
+
+class ProductReviewRequest(BaseModel):
+    isApproved: bool
+    admin_comments: str
+    review_status: str
+
+
+# Category Related Schema
 
 
 class CategoryBase(BaseModel):

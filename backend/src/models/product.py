@@ -11,7 +11,9 @@ class ProductModel(BaseModel):
     seller_id: Optional[str] = None
     category: Optional[str] = None
     images: List[str] = Field(default_factory=list)
-    isApproved: Optional[bool] = False
+    status: str = "pending"  # "pending", "approved", "rejected", "resubmitted"
+    admin_comments: Optional[str] = None
+    reviewed_at: Optional[str] = None
 
     class Config:
         allow_population_by_field_name = True

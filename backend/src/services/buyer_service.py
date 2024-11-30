@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from src.config.database import cart, users, upload_product, payment_methods
+from src.config.database import cart, users, product_collection, payment_methods
 from src.models.cart import Cart 
 from src.schemas.user_schema import update_cart, PaymentMethodrequest, UpdatePaymentStatus
 from fastapi.encoders import jsonable_encoder
@@ -61,7 +61,7 @@ async def fetch_cart_items(email: str):
     product_ids = [ObjectId(item["productId"]) for item in user_cart["products"]]
     
     # Fetch product details from the `upload_product` collection
-    products = await upload_product.find({"_id": {"$in": product_ids}}).to_list(length=len(product_ids))
+    products = await product_collection.find({"_id": {"$in": product_ids}}).to_list(length=len(product_ids))
     
     # Add quantities from cart to products
     product_dict = {str(product["_id"]): product for product in products}
@@ -102,7 +102,7 @@ async def update_quantity(quantity: update_cart):
     )
 
     # Fetch the updated product details
-    product = await upload_product.find_one({"_id": ObjectId(quantity.id)})
+    product = await product_collection.find_one({"_id": ObjectId(quantity.id)})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
