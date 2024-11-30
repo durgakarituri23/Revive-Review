@@ -9,13 +9,10 @@ const ManageProducts = () => {
     description: '',
     price: '',
     category: '',
-    images: [],
-    stock: 0,
-    status: 'active'
+    images: []
   });
   const [newImages, setNewImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
-
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -48,9 +45,7 @@ const ManageProducts = () => {
       description: product.description,
       price: product.price,
       category: product.category || '',
-      images: product.images || [],
-      stock: product.stock || 0,
-      status: product.status || 'active'
+      images: product.images || []
     });
     setPreviewImages(product.images.map(img =>
       `http://localhost:8000/upload_images/${img}`
@@ -60,8 +55,6 @@ const ManageProducts = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setNewImages([file]);
-
-    // Create preview URLs
     const preview = URL.createObjectURL(file);
     setPreviewImages([preview]);
   };
@@ -70,7 +63,7 @@ const ManageProducts = () => {
     const { name, value } = e.target;
     let processedValue = value;
 
-    if (name === 'price' || name === 'stock') {
+    if (name === 'price') {
       processedValue = parseFloat(value) || 0;
     }
 
@@ -84,19 +77,15 @@ const ManageProducts = () => {
     try {
       const formData = new FormData();
 
-      // Append all product fields
       formData.append('product_name', updatedProduct.product_name);
       formData.append('description', updatedProduct.description);
       formData.append('price', updatedProduct.price);
       formData.append('category', updatedProduct.category);
-      formData.append('stock', updatedProduct.stock);
-      formData.append('status', updatedProduct.status);
 
       if (updatedProduct.images.length > 0) {
         formData.append('existing_images', updatedProduct.images[0]);
       }
 
-      // Append new images if any
       if (newImages.length > 0) {
         formData.append('new_images', newImages[0]);
       }
@@ -129,9 +118,7 @@ const ManageProducts = () => {
       description: '',
       price: '',
       category: '',
-      images: [],
-      stock: 0,
-      status: 'active'
+      images: []
     });
   };
 
@@ -223,30 +210,6 @@ const ManageProducts = () => {
                       </div>
 
                       <div className="mb-3">
-                        <label className="form-label">Stock</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          name="stock"
-                          value={updatedProduct.stock}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="form-label">Status</label>
-                        <select
-                          className="form-select"
-                          name="status"
-                          value={updatedProduct.status}
-                          onChange={handleInputChange}
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                        </select>
-                      </div>
-
-                      <div className="mb-3">
                         <label className="form-label">Product Images</label>
                         <input
                           type="file"
@@ -305,12 +268,6 @@ const ManageProducts = () => {
                       <p className="card-text">{product.description}</p>
                       <p className="card-text">
                         <strong>Price:</strong> ${product.price ? product.price.toFixed(2) : 'N/A'}
-                      </p>
-                      <p className="card-text">
-                        <strong>Stock:</strong> {product.stock || 0}
-                      </p>
-                      <p className="card-text">
-                        <strong>Status:</strong> {product.status || 'active'}
                       </p>
                       <button
                         className="btn btn-primary"

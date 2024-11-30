@@ -2,16 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const UploadProducts = () => {
-  // Get logged-in seller's ID from your auth context/state
   const { user } = useAuth();
   const sellerId = user?.business_name;
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([
-    { productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }
+    { productName: '', description: '', price: '', category: '', imageFiles: [] }
   ]);
 
-
-  // Fetch categories when component mounts
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -30,14 +27,12 @@ const UploadProducts = () => {
     fetchCategories();
   }, []);
 
-  // Handle changes in product fields
   const handleProductChange = (index, field, value) => {
     const newProducts = [...products];
     newProducts[index][field] = value;
     setProducts(newProducts);
   };
 
-  // Handle image selection
   const handleImageChange = (e, productIndex) => {
     const newProducts = [...products];
     const files = Array.from(e.target.files);
@@ -45,22 +40,19 @@ const UploadProducts = () => {
     setProducts(newProducts);
   };
 
-  // Add a new product block
   const handleAddProduct = () => {
     setProducts([
       ...products,
-      { productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }
+      { productName: '', description: '', price: '', category: '', imageFiles: [] }
     ]);
   };
 
-  // Remove a product block
   const handleRemoveProduct = (index) => {
     const newProducts = [...products];
     newProducts.splice(index, 1);
     setProducts(newProducts);
   };
 
-  // Reset file input
   const resetFileInput = (index) => {
     const fileInput = document.querySelector(`#file-input-${index}`);
     if (fileInput) {
@@ -68,28 +60,23 @@ const UploadProducts = () => {
     }
   };
 
-  // Handle cancel
   const handleCancel = () => {
     if (window.confirm('Are you sure you want to cancel? All entered data will be lost.')) {
       window.location.reload();
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
 
-    // Append product details to formData
     products.forEach((product, productIndex) => {
       formData.append('product_names', product.productName);
       formData.append('descriptions', product.description);
       formData.append('prices', product.price);
       formData.append('categories', product.category);
-      formData.append('seller_ids', sellerId); // Adding seller ID for each product
-      formData.append('stocks', product.stock);
+      formData.append('seller_ids', sellerId);
 
-      // Append images for each product
       product.imageFiles.forEach((file) => {
         formData.append('images', file);
       });
@@ -102,9 +89,8 @@ const UploadProducts = () => {
       });
 
       if (response.ok) {
-        // Reset form and file inputs
         products.forEach((_, index) => resetFileInput(index));
-        setProducts([{ productName: '', description: '', price: '', category: '', stock: '', imageFiles: [] }]);
+        setProducts([{ productName: '', description: '', price: '', category: '', imageFiles: [] }]);
         alert('Products uploaded successfully!');
       } else {
         const result = await response.json();
@@ -168,17 +154,6 @@ const UploadProducts = () => {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="mb-3">
-              <label>Stock</label>
-              <input
-                type="number"
-                min="0"
-                className="form-control"
-                value={product.stock}
-                onChange={(e) => handleProductChange(productIndex, 'stock', e.target.value)}
-                required
-              />
             </div>
             <div className="mb-3">
               <label>Images</label>

@@ -9,14 +9,12 @@ class ProductCreate(BaseModel):
     description: str
     price: float
     seller_id: str
-    stock: Optional[int] = 0
 
 
 class ProductResponse(ProductCreate):
     id: str
     images: List[str] = []
     seller_id: str
-    stock: Optional[int] = 0
 
 
 class UpdateProductRequest(BaseModel):
@@ -28,8 +26,6 @@ class UpdateProductDetails(BaseModel):
     description: str
     price: float
     category: Optional[str] = None
-    stock: Optional[int] = 0
-    status: Optional[str] = "active"
     images: Optional[List[str]] = None
 
 

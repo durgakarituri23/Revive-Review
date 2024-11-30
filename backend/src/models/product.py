@@ -10,8 +10,6 @@ class ProductModel(BaseModel):
     price: float
     seller_id: Optional[str] = None
     category: Optional[str] = None
-    stock: Optional[int] = 0
-    status: Optional[str] = "active"
     images: List[str] = Field(default_factory=list)
     isApproved: Optional[bool] = False
 
