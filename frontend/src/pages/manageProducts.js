@@ -1,145 +1,126 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-// import { Carousel, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';  // Import useAuth
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const ManageProducts = () => {
   const [products, setProducts] = useState([]);
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [updatedProduct, setUpdatedProduct] = useState({
-    product_name: '',
-    description: '',
-    price: '',
-    category: '',
-    images: []
-  });
-  const [newImages, setNewImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
+  const { user } = useAuth();  // Get current user
+
+  // Styles
+  const carouselStyle = {
+    height: '200px',
+    overflow: 'hidden'
+  };
+
+  const imageStyle = {
+    width: '100%',
+    height: '200px',
+    objectFit: 'contain',
+    backgroundColor: '#f8f9fa'
+  };
 
   useEffect(() => {
     fetchProducts();
-    fetchCategories();
-  }, []);
+  }, []); // Add useEffect to fetch products when component mounts
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/products/approved');
+      // Fetch products for the specific seller
+      const response = await axios.get(`http://localhost:8000/products/seller/${user.business_name}`);
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/categories');
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
   const handleEditClick = (product) => {
-    setEditingProductId(product._id);
-    setUpdatedProduct({
-      product_name: product.product_name,
-      description: product.description,
-      price: product.price,
-      category: product.category || '',
-      images: product.images || []
-    });
-    setPreviewImages(product.images.map(img =>
-      `http://localhost:8000/upload_images/${img}`
-    ));
+    navigate(`/edit-product/${product._id}`);
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setNewImages(prevImages => [...prevImages, ...files]);
+  const getStatusBadge = (status) => {
+    const badges = {
+      approved: 'bg-success',
+      rejected: 'bg-danger',
+      pending: 'bg-warning'
+    };
 
-    // Create preview URLs for new images
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setPreviewImages(prevPreviews => [...prevPreviews, ...newPreviews]);
+    return (
+      <span className={`badge ${badges[status]} me-2`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    let processedValue = value;
-
-    if (name === 'price') {
-      processedValue = parseFloat(value) || 0;
-    }
-
-    setUpdatedProduct(prev => ({
-      ...prev,
-      [name]: processedValue
-    }));
-  };
-
-  const handleSaveClick = async (productId) => {
-    try {
-      const formData = new FormData();
-
-      formData.append('product_name', updatedProduct.product_name);
-      formData.append('description', updatedProduct.description);
-      formData.append('price', updatedProduct.price);
-      formData.append('category', updatedProduct.category);
-
-      updatedProduct.images.forEach((image, index) => {
-        formData.append(`existing_images`, image);
-      });
-
-      // Append new images
-      newImages.forEach((file, index) => {
-        formData.append(`new_images`, file);
-      });
-
-      await axios.put(
-        `http://localhost:8000/manage_products/${productId}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
+  const handleResubmit = async (product) => {
+    if (window.confirm('Are you sure you want to resubmit this product for review?')) {
+      try {
+        const response = await axios.put(
+          `http://localhost:8000/products/${product._id}/resubmit`,
+          {},  // Empty body since we're handling all changes on backend
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
           }
-        }
-      );
+        );
 
-      await fetchProducts();
-      handleCancelEdit();
-      alert('Product updated successfully');
-    } catch (error) {
-      console.error('Error updating product:', error);
-      alert('Failed to update product');
+        if (response.status === 200) {
+          alert('Product has been resubmitted for review');
+          fetchProducts(); // Refresh the product list
+        } else {
+          throw new Error('Failed to resubmit product');
+        }
+      } catch (error) {
+        console.error('Error resubmitting product:', error);
+        alert('Failed to resubmit product. Please try again.');
+      }
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditingProductId(null);
-    setNewImages([]);
-    // Clean up preview URLs
-    previewImages.forEach(preview => {
-      if (preview.startsWith('blob:')) {
-        URL.revokeObjectURL(preview);
-      }
-    });
-    setPreviewImages([]);
-    setUpdatedProduct({
-      product_name: '',
-      description: '',
-      price: '',
-      category: '',
-      images: []
-    });
-  };
-
-  const handleDeleteImage = (index) => {
-    // Remove image from both arrays
-    setPreviewImages(prev => prev.filter((_, i) => i !== index));
-    setNewImages(prev => prev.filter((_, i) => i !== index));
-    setUpdatedProduct(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+  const getActionButton = (product) => {
+    switch (product.status.toLowerCase()) {
+      case 'approved':
+        return (
+          <button
+            className="btn btn-primary mt-auto"
+            onClick={() => handleEditClick(product)}
+          >
+            Edit Product
+          </button>
+        );
+      case 'rejected':
+        return (
+          <div className="d-grid gap-2">
+            <button
+              className="btn btn-primary mt-auto"
+              onClick={() => handleEditClick(product)}
+            >
+              Edit Product
+            </button>
+            <button
+              className="btn btn-success"
+              onClick={() => handleResubmit(product)}
+            >
+              Resubmit for Review
+            </button>
+          </div>
+        );
+      case 'pending':
+        return (
+          <button className="btn btn-secondary mt-auto" disabled>
+            Pending Review
+          </button>
+        );
+      default:
+        return (
+          <button className="btn btn-secondary mt-auto" disabled>
+            Status: {product.status}
+          </button>
+        );
+    }
   };
 
   return (
@@ -150,144 +131,87 @@ const ManageProducts = () => {
           products.map((product) => (
             <div key={product._id} className="col-md-4 mb-4">
               <div className="card h-100">
-                <div style={{ height: "200px", overflow: "hidden" }}>
-                  {product.images && product.images.length > 0 ? (
-                    <img
-                      src={`http://localhost:8000/upload_images/${product.images[0]}`}
-                      className="card-img-top"
-                      alt={product.product_name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover"
-                      }}
-                    />
-                  ) : (
-                    <div className="text-center p-4 bg-light">No image available</div>
-                  )}
-                </div>
-                <div className="card-body">
-                  {editingProductId === product._id ? (
-                    <div className="edit-form">
-                      <div className="mb-3">
-                        <label className="form-label">Product Name</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="product_name"
-                          value={updatedProduct.product_name}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="form-label">Category</label>
-                        <select
-                          className="form-select"
-                          name="category"
-                          value={updatedProduct.category}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Select Category</option>
-                          {categories.map(category => (
-                            <option key={category._id} value={category.name}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="form-label">Description</label>
-                        <textarea
-                          className="form-control"
-                          name="description"
-                          value={updatedProduct.description}
-                          onChange={handleInputChange}
-                          rows="3"
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="form-label">Price</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          name="price"
-                          value={updatedProduct.price}
-                          onChange={handleInputChange}
-                          step="0.01"
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="form-label">Product Images</label>
-                        <input
-                          type="file"
-                          className="form-control"
-                          onChange={handleImageChange}
-                          accept="image/*"
-                        />
-                      </div>
-
-                      {previewImages.length > 0 && (
-                        <div className="mb-3">
-                          <label className="form-label">Current Images</label>
-                          <div className="d-flex flex-wrap gap-2">
-                            {previewImages.map((img, index) => (
-                              <div key={index} className="position-relative">
-                                <img
-                                  src={img}
-                                  alt={`Preview ${index}`}
-                                  style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                                  className="rounded"
-                                />
-                                <button
-                                  type="button"
-                                  className="btn btn-danger btn-sm position-absolute top-0 end-0"
-                                  onClick={() => handleDeleteImage(index)}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                {/* Add back the carousel section */}
+                {product.images && product.images.length > 0 ? (
+                  <div id={`carousel-${product._id}`} className="carousel slide" data-bs-ride="carousel" style={carouselStyle}>
+                    <div className="carousel-inner">
+                      {product.images.map((image, index) => (
+                        <div key={index} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
+                          <img
+                            src={`http://localhost:8000/upload_images/${image}`}
+                            alt={`${product.product_name} ${index + 1}`}
+                            style={imageStyle}
+                          />
                         </div>
-                      )}
+                      ))}
+                    </div>
+                    {product.images.length > 1 && (
+                      <>
+                        <button
+                          className="carousel-control-prev"
+                          type="button"
+                          data-bs-target={`#carousel-${product._id}`}
+                          data-bs-slide="prev"
+                        >
+                          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                          <span className="visually-hidden">Previous</span>
+                        </button>
+                        <button
+                          className="carousel-control-next"
+                          type="button"
+                          data-bs-target={`#carousel-${product._id}`}
+                          data-bs-slide="next"
+                        >
+                          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                          <span className="visually-hidden">Next</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center p-4 bg-light" style={{ height: "200px" }}>
+                    No image available
+                  </div>
+                )}
 
-                      <div className="mt-3">
-                        <button
-                          className="btn btn-success me-2"
-                          onClick={() => handleSaveClick(product._id)}
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          onClick={handleCancelEdit}
-                        >
-                          Cancel
-                        </button>
+                <div className="card-body d-flex flex-column">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <h5 className="card-title">{product.product_name}</h5>
+                    {getStatusBadge(product.status)}
+                  </div>
+
+                  <p className="card-text">
+                    <strong>Category:</strong> {product.category || 'N/A'}
+                  </p>
+                  <p className="card-text flex-grow-1" style={{
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: "3",
+                    WebkitBoxOrient: "vertical"
+                  }}>
+                    {product.description}
+                  </p>
+                  <p className="card-text">
+                    <strong>Price:</strong> ${product.price ? product.price.toFixed(2) : 'N/A'}
+                  </p>
+
+                  {product.admin_comments && (
+                    <div className="mt-2 mb-3">
+                      <div className={`card ${product.status === 'rejected' ? 'border-danger' : 'border-success'}`}>
+                        <div className="card-body py-2 px-3">
+                          <h6 className="card-subtitle mb-1 text-muted">Admin Comments</h6>
+                          <p className="card-text small mb-1">{product.admin_comments}</p>
+                          {product.reviewed_at && (
+                            <small className="text-muted">
+                              Reviewed on: {new Date(product.reviewed_at).toLocaleDateString()}
+                            </small>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <h5 className="card-title">{product.product_name}</h5>
-                      <p className="card-text">
-                        <strong>Category:</strong> {product.category || 'N/A'}
-                      </p>
-                      <p className="card-text">{product.description}</p>
-                      <p className="card-text">
-                        <strong>Price:</strong> ${product.price ? product.price.toFixed(2) : 'N/A'}
-                      </p>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => handleEditClick(product)}
-                      >
-                        Edit Product
-                      </button>
-                    </>
                   )}
+
+                  {getActionButton(product)}
                 </div>
               </div>
             </div>
