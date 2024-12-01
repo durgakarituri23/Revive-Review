@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from src.config.database import cart, product_collection
+from src.config.database import cart, product_collection, users
 from src.models.cart import Cart
 from src.schemas.cart_schema import UpdateCart, DeleteCartProduct, UpdatePaymentStatus
 from fastapi.encoders import jsonable_encoder
@@ -7,6 +7,8 @@ from bson import ObjectId
 from src.services.buyer_service import verify_buyer
 from datetime import datetime
 import logging
+from src.services.order_services import create_order
+from src.schemas.order_schema import OrderCreateSchema, OrderItemSchema
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -156,9 +158,9 @@ async def clear_cart(email: str):
                 "$set": {
                     "products": [],
                     "buyed": True,
-                    "purchased_at": str(datetime.utcnow())
+                    "purchased_at": str(datetime.utcnow()),
                 }
-            }
+            },
         )
 
         if result.modified_count == 0:
@@ -182,7 +184,7 @@ async def get_cart_total(email: str):
 
 
 async def update_payment_status(request: UpdatePaymentStatus):
-    """Update payment status for cart items"""
+    """Update payment status for cart items and create order if payment successful"""
     try:
         await verify_buyer(request.email)
         logger.info(f"Updating payment status for user: {request.email}")
@@ -193,10 +195,35 @@ async def update_payment_status(request: UpdatePaymentStatus):
             logger.error(f"Cart not found for user: {request.email}")
             raise HTTPException(status_code=404, detail="Cart not found")
 
-        # Update the payment status
+        # Fetch full cart items with product details
+        cart_items = await fetch_cart_items(request.email)
+        total_amount = sum(
+            item.get("price", 0) * item.get("quantity", 1) for item in cart_items
+        )
+
+        # Update product statuses first
+        for item in cart_items:
+            await product_collection.update_one(
+                {"_id": item["_id"]},
+                {
+                    "$set": {
+                        "status": "sold",
+                        "buyer_email": request.email,
+                        "sold_at": datetime.utcnow().isoformat(),
+                    }
+                },
+            )
+
+        # Update the payment status and clear cart
         result = await cart.update_one(
             {"email": request.email},
-            {"$set": {"buyed": request.buyed, "purchased_at": str(datetime.utcnow())}},
+            {
+                "$set": {
+                    "products": [],  # Clear cart
+                    "buyed": request.buyed,
+                    "purchased_at": datetime.utcnow().isoformat(),
+                }
+            },
         )
 
         if result.modified_count == 0:
@@ -205,23 +232,42 @@ async def update_payment_status(request: UpdatePaymentStatus):
                 status_code=500, detail="Failed to update payment status"
             )
 
-        # Update product statuses
+        # If payment is successful, create order
         if request.buyed:
-            product_ids = [item["productId"] for item in user_cart.get("products", [])]
-            for product_id in product_ids:
-                await product_collection.update_one(
-                    {"_id": product_id},
-                    {
-                        "$set": {
-                            "status": "sold",
-                            "sold_at": str(datetime.utcnow()),
-                            "buyer_email": request.email,
-                        }
-                    },
+            # Get user address and payment method
+            user = await users.find_one({"email": request.email})
+            shipping_address = {
+                "name": f"{user['first_name']} {user['last_name']}",
+                "address": user.get("address", ""),
+                "postal_code": user.get("postal_code", ""),
+            }
+
+            # Create order items from cart items
+            order_items = [
+                OrderItemSchema(
+                    product_id=str(item["_id"]),
+                    product_name=item["product_name"],
+                    quantity=item["quantity"],
+                    price=float(item["price"]),
+                    image=item["images"][0] if item.get("images") else None,
                 )
+                for item in cart_items
+            ]
+
+            # Create order
+            order_data = OrderCreateSchema(
+                buyer_email=request.email,
+                items=order_items,
+                total_amount=total_amount,
+                shipping_address=shipping_address,
+                payment_method=request.payment_method,
+            )
+
+            await create_order(order_data)
 
         logger.info(f"Successfully updated payment status for user: {request.email}")
         return {"message": "Payment status updated successfully"}
+
     except HTTPException as he:
         raise he
     except Exception as e:
