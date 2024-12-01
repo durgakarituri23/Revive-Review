@@ -2,11 +2,13 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useCart } from '../contexts/CartContext';
 
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { cartItems } = useCart();
 
   const handleLogout = () => {
     logout();
@@ -49,9 +51,18 @@ const Header = () => {
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/manage-profile">Manage Profile</Link>
                   </li>
-                  <li className="nav-item">
-                    <Link className="nav-link text-white" to="/cart">Cart</Link>
-                  </li>
+                  {user.role === 'buyer' && (
+                    <li className="nav-item">
+                      <Link className="nav-link text-white position-relative" to="/cart">
+                        Cart
+                        {cartItems.length > 0 && (
+                          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {cartItems.length}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  )}
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/manage-payments">Payment Methods</Link>
                   </li>

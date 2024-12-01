@@ -66,31 +66,32 @@ const Payments = () => {
     setIsProcessing(true);
 
     try {
-      // Update product statuses first
-      await Promise.all(cart.map(async (item) => {
-        await axios.put(`http://localhost:8000/products/${item._id}`, {
-          isApproved: false,
-          admin_comments: "Product sold",
-          review_status: "sold"
-        });
-      }));
+      // Prepare payment method details
+      const paymentMethodDetails = selectedMethodDetails ? {
+        type: selectedMethodDetails.type,
+        ...(selectedMethodDetails.type === 'card'
+          ? {
+            cardNumber: selectedMethodDetails.cardNumber,
+            cardName: selectedMethodDetails.cardName
+          }
+          : selectedMethodDetails.type === 'paypal'
+            ? { paypalEmail: selectedMethodDetails.paypalEmail }
+            : { type: 'cash' }
+        )
+      } : { type: 'cash' };
 
-      // Update payment status
-      await axios.put(`http://localhost:8000/cart/payment-status`, {
+      // Update payment status with payment method
+      const response = await axios.put(`http://localhost:8000/cart/payment-status`, {
         email: userEmail,
-        buyed: true
+        buyed: true,
+        payment_method: paymentMethodDetails  // Make sure this is included
       });
 
-      // Clear cart items
-      await axios.delete(`http://localhost:8000/cart/clear`, {
-        params: { email: userEmail }
-      });
-
-      // Update cart state in context
-      await updateCart();
-
-      alert("Payment successful! Thank you for your purchase.");
-      navigate("/vieworders");
+      if (response.data.message) {
+        alert("Payment successful! Thank you for your purchase.");
+        await updateCart();
+        navigate("/vieworders");
+      }
     } catch (error) {
       console.error("Error processing payment:", error);
       const errorMessage = error.response?.data?.detail || error.message;
@@ -99,6 +100,8 @@ const Payments = () => {
       setIsProcessing(false);
     }
   };
+
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -124,7 +127,7 @@ const Payments = () => {
           <div className="card shadow-sm border-0 mb-4">
             <div className="card-body">
               <h4 className="card-title mb-4">Order Summary</h4>
-              
+
               {/* Product List */}
               {cart.map((item) => (
                 <div key={item._id} className="card shadow-sm border-0 mb-3">
@@ -225,9 +228,9 @@ const Payments = () => {
           <div className="card shadow-sm border-0 mb-4">
             <div className="card-body">
               <h4 className="card-title mb-4">Payment Method</h4>
-              <select 
-                className="form-select mb-4" 
-                onChange={handlePaymentMethodChange} 
+              <select
+                className="form-select mb-4"
+                onChange={handlePaymentMethodChange}
                 value={selectedPaymentMethod}
               >
                 <option value="">Choose Payment Method</option>
