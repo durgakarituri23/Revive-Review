@@ -7,5 +7,5 @@ users = database.Users
 
 product_collection = database.ProductDetails
 cart = database.Cart
-payment_methods = database.Cards
+payment_methods = database.PaymentDetails
 category = database.Categories

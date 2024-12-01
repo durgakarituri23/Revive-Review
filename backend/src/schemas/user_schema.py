@@ -140,6 +140,7 @@ class CardPayment(BaseModel):
     cardNumber: str
     cardName: str
     cvv: str
+    expiryDate: str
 
 class PaypalPayment(BaseModel):
     type: str = "paypal"
