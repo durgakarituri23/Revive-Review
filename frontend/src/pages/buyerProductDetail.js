@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const BuyerProductDetail = () => {
     const [product, setProduct] = useState(null);
     const { productId } = useParams();
     const navigate = useNavigate();
+    const { cartItems, addToCart, updateCart } = useCart();
+    const { userEmail, userRole } = useAuth();
 
     const carouselStyle = {
-        height: '400px',  // Increased height for detail view
+        height: '400px',
         overflow: 'hidden'
     };
 
     const imageStyle = {
         width: '100%',
-        height: '400px',  // Increased height for detail view
+        height: '400px',
         objectFit: 'contain',
         backgroundColor: '#f8f9fa'
     };
@@ -30,24 +34,32 @@ const BuyerProductDetail = () => {
         };
 
         fetchProduct();
-    }, [productId]);
+        if (userEmail) {
+            updateCart();
+        }
+    }, [productId, userEmail, updateCart]);
 
     const handleAddToCart = async () => {
-        const userEmail = localStorage.getItem('userEmail');
         if (!userEmail) {
             alert("Please log in to add items to your cart.");
             return;
         }
 
-        try {
-            await axios.post("http://localhost:8000/user/add-to-cart", {
-                email: userEmail,
-                products: [{ productId: product._id, quantity: 1 }],
-            });
+        if (userRole !== 'buyer') {
+            alert("Only buyers can add items to cart.");
+            return;
+        }
+
+        // Check if product is already in cart
+        const isInCart = cartItems.some(item => item._id === product._id);
+        if (isInCart) {
+            alert("This product is already in your cart!");
+            return;
+        }
+
+        const success = await addToCart(product);
+        if (success) {
             alert("Product added to cart successfully!");
-        } catch (error) {
-            console.error("Error adding product to cart:", error);
-            alert("Failed to add product to cart.");
         }
     };
 
@@ -55,9 +67,12 @@ const BuyerProductDetail = () => {
         return <div className="container mt-4">Loading...</div>;
     }
 
+    // Check if product is in cart
+    const isProductInCart = cartItems.some(item => item._id === product._id);
+
     return (
         <div className="container py-4">
-            <button 
+            <button
                 className="btn btn-outline-primary mb-4"
                 onClick={() => navigate(-1)}
             >
@@ -81,19 +96,19 @@ const BuyerProductDetail = () => {
                             </div>
                             {product.images.length > 1 && (
                                 <>
-                                    <button 
-                                        className="carousel-control-prev" 
-                                        type="button" 
-                                        data-bs-target={`#carousel-${product._id}`} 
+                                    <button
+                                        className="carousel-control-prev"
+                                        type="button"
+                                        data-bs-target={`#carousel-${product._id}`}
                                         data-bs-slide="prev"
                                     >
                                         <span className="carousel-control-prev-icon" aria-hidden="true"></span>
                                         <span className="visually-hidden">Previous</span>
                                     </button>
-                                    <button 
-                                        className="carousel-control-next" 
-                                        type="button" 
-                                        data-bs-target={`#carousel-${product._id}`} 
+                                    <button
+                                        className="carousel-control-next"
+                                        type="button"
+                                        data-bs-target={`#carousel-${product._id}`}
                                         data-bs-slide="next"
                                     >
                                         <span className="carousel-control-next-icon" aria-hidden="true"></span>
@@ -116,12 +131,21 @@ const BuyerProductDetail = () => {
                         <h4>Description</h4>
                         <p>{product.description}</p>
                     </div>
-                    <button
-                        className="btn btn-primary btn-lg mt-4"
-                        onClick={handleAddToCart}
-                    >
-                        Add to Cart
-                    </button>
+                    {isProductInCart ? (
+                        <button
+                            className="btn btn-secondary btn-lg mt-4"
+                            disabled
+                        >
+                            Already in Cart
+                        </button>
+                    ) : (
+                        <button
+                            className="btn btn-primary btn-lg mt-4"
+                            onClick={handleAddToCart}
+                        >
+                            Add to Cart
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
