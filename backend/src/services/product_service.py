@@ -230,3 +230,23 @@ async def review_product(product_id: str, review_data: dict):
 
     updated_product = await product_collection.find_one({"_id": product_id})
     return ProductModel(**updated_product)
+
+
+async def update_product_sold_status(product_id: str, buyer_email: str):
+    try:
+        result = await product_collection.update_one(
+            {"_id": product_id},
+            {
+                "$set": {
+                    "status": "sold",
+                    "buyer": buyer_email,
+                    "sold_at": datetime.now().isoformat()
+                }
+            }
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return True
+    except Exception as e:
+        print(f"Error updating product sold status: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
