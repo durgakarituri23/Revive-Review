@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const UnapprovedProductsPage = () => {
     const [products, setProducts] = useState([]);
+    const navigate = useNavigate();
 
-    // Styles for carousel
     const carouselStyle = {
         height: '200px',
         overflow: 'hidden'
@@ -14,7 +15,8 @@ const UnapprovedProductsPage = () => {
     const imageStyle = {
         width: '100%',
         height: '200px',
-        objectFit: 'cover'
+        objectFit: 'contain',
+        backgroundColor: '#f8f9fa'
     };
 
     useEffect(() => {
@@ -29,14 +31,8 @@ const UnapprovedProductsPage = () => {
         fetchUnapprovedProducts();
     }, []);
 
-    const handleApproval = async (productId) => {
-        try {
-            const response = await axios.put(`http://localhost:8000/products/${productId}`, { isApproved: true });
-            console.log('Product approved:', response.data);
-            setProducts(products.filter(product => product._id !== productId));
-        } catch (error) {
-            console.error('Error updating product approval:', error);
-        }
+    const handleReviewClick = (productId) => {
+        navigate(`/admin/review-product/${productId}`);
     };
 
     return (
@@ -49,7 +45,6 @@ const UnapprovedProductsPage = () => {
                     {products.map(product => (
                         <div key={product._id} className="col-md-4 mb-4">
                             <div className="card h-100">
-                                {/* Carousel Section */}
                                 {product.images && product.images.length > 0 ? (
                                     <div 
                                         id={`carousel-${product._id}`} 
@@ -79,10 +74,7 @@ const UnapprovedProductsPage = () => {
                                                     data-bs-target={`#carousel-${product._id}`} 
                                                     data-bs-slide="prev"
                                                 >
-                                                    <span 
-                                                        className="carousel-control-prev-icon" 
-                                                        aria-hidden="true"
-                                                    ></span>
+                                                    <span className="carousel-control-prev-icon" aria-hidden="true"></span>
                                                     <span className="visually-hidden">Previous</span>
                                                 </button>
                                                 <button 
@@ -91,10 +83,7 @@ const UnapprovedProductsPage = () => {
                                                     data-bs-target={`#carousel-${product._id}`} 
                                                     data-bs-slide="next"
                                                 >
-                                                    <span 
-                                                        className="carousel-control-next-icon" 
-                                                        aria-hidden="true"
-                                                    ></span>
+                                                    <span className="carousel-control-next-icon" aria-hidden="true"></span>
                                                     <span className="visually-hidden">Next</span>
                                                 </button>
                                             </>
@@ -106,7 +95,6 @@ const UnapprovedProductsPage = () => {
                                     </div>
                                 )}
 
-                                {/* Card Body */}
                                 <div className="card-body d-flex flex-column">
                                     <h5 className="card-title">{product.product_name}</h5>
                                     <p className="card-text flex-grow-1" style={{
@@ -132,10 +120,10 @@ const UnapprovedProductsPage = () => {
                                             </p>
                                         )}
                                         <button 
-                                            className="btn btn-success w-100"
-                                            onClick={() => handleApproval(product._id)}
+                                            className="btn btn-primary w-100"
+                                            onClick={() => handleReviewClick(product._id)}
                                         >
-                                            Approve Product
+                                            Review Product
                                         </button>
                                     </div>
                                 </div>

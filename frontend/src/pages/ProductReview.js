@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
 
-const BuyerProductDetail = () => {
+const ProductReview = () => {
     const [product, setProduct] = useState(null);
+    const [comments, setComments] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { productId } = useParams();
     const navigate = useNavigate();
-    const { cartItems, addToCart, updateCart } = useCart();
-    const { userEmail, userRole } = useAuth();
 
     const carouselStyle = {
         height: '400px',
@@ -29,37 +27,44 @@ const BuyerProductDetail = () => {
                 const response = await axios.get(`http://localhost:8000/products/${productId}`);
                 setProduct(response.data);
             } catch (error) {
-                console.error("Error fetching product details:", error);
+                console.error('Error fetching product:', error);
             }
         };
 
         fetchProduct();
-        if (userEmail) {
-            updateCart();
-        }
-    }, [productId, userEmail, updateCart]);
+    }, [productId]);
 
-    const handleAddToCart = async () => {
-        if (!userEmail) {
-            alert("Please log in to add items to your cart.");
+    const handleDecision = async (isApproved) => {
+        if (!comments.trim()) {
+            alert('Please provide comments before submitting your decision.');
             return;
         }
 
-        if (userRole !== 'buyer') {
-            alert("Only buyers can add items to cart.");
-            return;
-        }
+        setIsSubmitting(true);
+        try {
+            const review_data = {
+                isApproved: isApproved,
+                admin_comments: comments,
+                review_status: isApproved ? 'approved' : 'rejected'
+            };
 
-        // Check if product is already in cart
-        const isInCart = cartItems.some(item => item._id === product._id);
-        if (isInCart) {
-            alert("This product is already in your cart!");
-            return;
-        }
+            await axios.put(
+                `http://localhost:8000/products/${productId}/review`,
+                review_data,
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
 
-        const success = await addToCart(product);
-        if (success) {
-            alert("Product added to cart successfully!");
+            alert(`Product has been ${isApproved ? 'approved' : 'denied'} successfully`);
+            navigate('/unapproved-products');
+        } catch (error) {
+            console.error('Error updating product status:', error);
+            alert('Failed to update product status. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -67,22 +72,20 @@ const BuyerProductDetail = () => {
         return <div className="container mt-4">Loading...</div>;
     }
 
-    // Check if product is in cart
-    const isProductInCart = cartItems.some(item => item._id === product._id);
-
     return (
         <div className="container py-4">
             <button
                 className="btn btn-outline-primary mb-4"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/unapproved-products')}
             >
-                <i className="bi bi-arrow-left"></i> Back to Products
+                <i className="bi bi-arrow-left"></i> Back to Products List
             </button>
 
             <div className="row">
+                {/* Image Column */}
                 <div className="col-md-6">
                     {product.images && product.images.length > 0 ? (
-                        <div id={`carousel-${product._id}`} className="carousel slide" data-bs-ride="carousel" style={carouselStyle}>
+                        <div id="productCarousel" className="carousel slide" data-bs-ride="carousel" style={carouselStyle}>
                             <div className="carousel-inner">
                                 {product.images.map((image, index) => (
                                     <div key={index} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
@@ -96,21 +99,11 @@ const BuyerProductDetail = () => {
                             </div>
                             {product.images.length > 1 && (
                                 <>
-                                    <button
-                                        className="carousel-control-prev"
-                                        type="button"
-                                        data-bs-target={`#carousel-${product._id}`}
-                                        data-bs-slide="prev"
-                                    >
+                                    <button className="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
                                         <span className="carousel-control-prev-icon" aria-hidden="true"></span>
                                         <span className="visually-hidden">Previous</span>
                                     </button>
-                                    <button
-                                        className="carousel-control-next"
-                                        type="button"
-                                        data-bs-target={`#carousel-${product._id}`}
-                                        data-bs-slide="next"
-                                    >
+                                    <button className="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
                                         <span className="carousel-control-next-icon" aria-hidden="true"></span>
                                         <span className="visually-hidden">Next</span>
                                     </button>
@@ -123,33 +116,51 @@ const BuyerProductDetail = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Details Column */}
                 <div className="col-md-6">
                     <h2>{product.product_name}</h2>
-                    <p className="text-muted">Category: {product.category}</p>
+                    <p className="text-muted">Category: {product.category || 'N/A'}</p>
+                    <p className="text-muted">Seller: {product.seller_id || 'N/A'}</p>
                     <h3 className="mt-3">${product.price.toFixed(2)}</h3>
+
                     <div className="mt-4">
                         <h4>Description</h4>
                         <p>{product.description}</p>
                     </div>
-                    {isProductInCart ? (
+
+                    <div className="mt-4">
+                        <h4>Review Comments</h4>
+                        <textarea
+                            className="form-control mb-3"
+                            rows="4"
+                            value={comments}
+                            onChange={(e) => setComments(e.target.value)}
+                            placeholder="Enter your comments for the seller..."
+                            required
+                        />
+                    </div>
+
+                    <div className="d-flex gap-3 mt-4">
                         <button
-                            className="btn btn-secondary btn-lg mt-4"
-                            disabled
+                            className="btn btn-success btn-lg flex-grow-1"
+                            onClick={() => handleDecision(true)}
+                            disabled={isSubmitting}
                         >
-                            Already in Cart
+                            Approve Product
                         </button>
-                    ) : (
                         <button
-                            className="btn btn-primary btn-lg mt-4"
-                            onClick={handleAddToCart}
+                            className="btn btn-danger btn-lg flex-grow-1"
+                            onClick={() => handleDecision(false)}
+                            disabled={isSubmitting}
                         >
-                            Add to Cart
+                            Deny Product
                         </button>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-export default BuyerProductDetail;
+export default ProductReview;
