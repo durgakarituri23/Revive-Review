@@ -2,6 +2,7 @@ import './App.css';
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import { ProtectedRoute, SellerRoute, BuyerRoute, AdminRoute } from './components/ProtectedRoute';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -25,6 +26,9 @@ import ViewOrders from './pages/viewOrders';
 import SellerHome from './pages/SellerHome';
 import AdminHome from './pages/AdminHome';
 import BuyerProductDetail from './pages/buyerProductDetail';
+import EditProduct from './pages/editProduct';
+import ProductReview from './pages/ProductReview';
+import ManageProfile from './pages/manageProfile';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -34,127 +38,152 @@ const RoleBasedHome = () => {
 
   switch (user.role) {
     case 'seller':
-      return <SellerHome />;  // seller default home page
+      return <SellerHome />;
     case 'admin':
-      return <AdminHome />;   // admin default home page
+      return <AdminHome />;
     case 'buyer':
     default:
-      return <Home />;   // buyer default home page
+      return <Home />;
   }
 };
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="d-flex flex-column min-vh-100">
-          <Header />
-          <main className="flex-grow-1">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotResetPassword />} />
-              <Route path="/seller-register" element={<SellerRegister />} />
-              <Route path="/admin-register" element={<AdminRegister />} />
+      <CartProvider>
+        <Router>
+          <div className="d-flex flex-column min-vh-100">
+            <Header />
+            <main className="flex-grow-1">
+              <Routes>
+                {/* Your existing routes remain the same */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotResetPassword />} />
+                <Route path="/seller-register" element={<SellerRegister />} />
+                <Route path="/admin-register" element={<AdminRegister />} />
 
-              {/* Seller Only Routes */}
-              <Route
-                path="/uploadProducts"
-                element={
-                  <SellerRoute>
-                    <UploadProducts />
-                  </SellerRoute>
-                }
-              />
-              <Route
-                path="/manage-products"
-                element={
-                  <SellerRoute>
-                    <ManageProducts />
-                  </SellerRoute>
-                }
-              />
+                {/* Seller Only Routes */}
+                <Route
+                  path="/uploadProducts"
+                  element={
+                    <SellerRoute>
+                      <UploadProducts />
+                    </SellerRoute>
+                  }
+                />
+                <Route
+                  path="/manage-products"
+                  element={
+                    <SellerRoute>
+                      <ManageProducts />
+                    </SellerRoute>
+                  }
+                />
+                <Route
+                  path="/edit-product/:productId"
+                  element={
+                    <SellerRoute>
+                      <EditProduct />
+                    </SellerRoute>
+                  }
+                />
 
-              {/* Admin Only Routes */}
-              <Route
-                path="/unapproved-products"
-                element={
-                  <AdminRoute>
-                    <UnapprovedProductsPage />
-                  </AdminRoute>
-                }
-              />
+                {/* Admin Only Routes */}
+                <Route
+                  path="/unapproved-products"
+                  element={
+                    <AdminRoute>
+                      <UnapprovedProductsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/review-product/:productId"
+                  element={
+                    <AdminRoute>
+                      <ProductReview />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/manage-categories"
+                  element={
+                    <AdminRoute>
+                      <ManageCategories />
+                    </AdminRoute>
+                  }
+                />
 
-              <Route
-                path="/manage-categories"
-                element={
-                  <AdminRoute>
-                    <ManageCategories />
-                  </AdminRoute>
-                }
-              />
+                {/* Buyer Only Routes */}
+                <Route
+                  path="/cart"
+                  element={
+                    <BuyerRoute>
+                      <Cart />
+                    </BuyerRoute>
+                  }
+                />
+                <Route
+                  path="/payments"
+                  element={
+                    <BuyerRoute>
+                      <Payments />
+                    </BuyerRoute>
+                  }
+                />
+                <Route
+                  path="/manage-payments"
+                  element={
+                    <BuyerRoute>
+                      <ManagePaymentMethods />
+                    </BuyerRoute>
+                  }
+                />
+                <Route
+                  path="/vieworders"
+                  element={
+                    <BuyerRoute>
+                      <ViewOrders />
+                    </BuyerRoute>
+                  }
+                />
+                <Route
+                  path="/product/:productId"
+                  element={
+                    <ProtectedRoute>
+                      <BuyerProductDetail />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Buyer Only Routes */}
-              <Route
-                path="/cart"
-                element={
-                  <BuyerRoute>
-                    <Cart />
-                  </BuyerRoute>
-                }
-              />
-              <Route
-                path="/payments"
-                element={
-                  <BuyerRoute>
-                    <Payments />
-                  </BuyerRoute>
-                }
-              />
-              <Route
-                path="/manage-payments"
-                element={
-                  <BuyerRoute>
-                    <ManagePaymentMethods />
-                  </BuyerRoute>
-                }
-              />
-              <Route
-                path="/vieworders"
-                element={
-                  <BuyerRoute>
-                    <ViewOrders />
-                  </BuyerRoute>
-                }
-              />
+                {/* Protected Home Route with Role-Based Content */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <RoleBasedHome />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/product/:productId"
-                element={
-                  <ProtectedRoute>
-                    <BuyerProductDetail />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/manage-profile"
+                  element={
+                    <ProtectedRoute>
+                      <ManageProfile />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Protected Home Route with Role-Based Content */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <RoleBasedHome />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* 404 Route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
+                {/* 404 Route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </CartProvider>
     </AuthProvider>
   );
 }

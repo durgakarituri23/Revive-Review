@@ -47,6 +47,9 @@ const Header = () => {
                     <Link className="nav-link text-white" to="/">Home</Link>
                   </li>
                   <li className="nav-item">
+                    <Link className="nav-link text-white" to="/manage-profile">Manage Profile</Link>
+                  </li>
+                  <li className="nav-item">
                     <Link className="nav-link text-white" to="/cart">Cart</Link>
                   </li>
                   <li className="nav-item">
@@ -63,6 +66,9 @@ const Header = () => {
                     <Link className="nav-link text-white" to="/">Home</Link>
                   </li>
                   <li className="nav-item">
+                    <Link className="nav-link text-white" to="/manage-profile">Manage Profile</Link>
+                  </li>
+                  <li className="nav-item">
                     <Link className="nav-link text-white" to="/uploadProducts">Upload Products</Link>
                   </li>
                   <li className="nav-item">
@@ -74,6 +80,9 @@ const Header = () => {
                 <>
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/">Home</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/manage-profile">Manage Profile</Link>
                   </li>
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/unapproved-products">Approve Products</Link>
