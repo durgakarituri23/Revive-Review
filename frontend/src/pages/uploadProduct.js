@@ -164,6 +164,7 @@ const UploadProducts = () => {
   return (
     <div className="container mt-5">
       <h2>Upload Products</h2>
+      <br/>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         {products.map((product, productIndex) => (
           <div key={productIndex} className="mb-5">

@@ -18,9 +18,14 @@ export const AuthProvider = ({ children }) => {
                     }
                 });
                 setUser(response.data);
+                // Store email when fetching user details
+                localStorage.setItem('userEmail', response.data.email);
+                localStorage.setItem('userRole', response.data.role);
             } catch (error) {
                 console.error('Error fetching user details:', error);
                 localStorage.removeItem('token');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userRole');
                 setUser(null);
             }
         }
@@ -38,7 +43,7 @@ export const AuthProvider = ({ children }) => {
             if (response.data.access_token) {
                 localStorage.setItem('token', response.data.access_token);
                 await fetchUserDetails();
-                return true;
+                return response.data;
             }
         } catch (error) {
             throw error;
@@ -48,6 +53,8 @@ export const AuthProvider = ({ children }) => {
     // Function to handle logout
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
         setUser(null);
     };
 
@@ -60,7 +67,9 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         logout,
-        loading
+        loading,
+        userEmail: user?.email || localStorage.getItem('userEmail'),
+        userRole: user?.role || localStorage.getItem('userRole')
     };
 
     return (
