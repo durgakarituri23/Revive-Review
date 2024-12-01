@@ -148,6 +148,22 @@ function App() {
                   }
                 />
                 <Route
+                path="/complaints"
+                element={
+                  <BuyerRoute>
+                    <ComplaintsPage />
+                  </BuyerRoute>
+                }
+              />
+              <Route
+                path="/raisecomplaint"
+                element={
+                  <BuyerRoute>
+                    <RaiseComplaint />
+                  </BuyerRoute>
+                }
+              />
+                <Route
                   path="/product/:productId"
                   element={
                     <ProtectedRoute>
