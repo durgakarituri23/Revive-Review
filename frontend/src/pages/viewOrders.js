@@ -104,17 +104,26 @@ const ViewOrders = () => {
     }
 
     try {
-      await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
+      // Log the request being made
+      console.log('Making request to:', `http://localhost:8000/orders/${orderId}/status`);
+
+      const response = await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
         status: 'return_requested'
       });
 
-      const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
-      setOrders(response.data);
+      // Log successful response
+      console.log('Return response:', response.data);
+
+      // Refresh orders list
+      const ordersResponse = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
+      setOrders(ordersResponse.data);
       alert('Return request submitted successfully');
     } catch (error) {
+      console.error('Full error details:', error);
       alert('Failed to submit return request');
     }
   };
+
 
   const renderCarousel = (item, orderId, itemIndex) => {
     const images = Array.isArray(item.images) ? item.images : [item.image];
@@ -135,7 +144,7 @@ const ViewOrders = () => {
             ></button>
           ))}
         </div>
-        
+
         <div className="carousel-inner h-100">
           {images.map((image, idx) => (
             <div key={idx} className={`carousel-item h-100 ${idx === 0 ? "active" : ""}`}>
@@ -174,7 +183,7 @@ const ViewOrders = () => {
       case 'cancelled': return 'bg-danger';
       case 'return_requested': return 'bg-secondary';
       case 'returned': return 'bg-dark';
-      default: return 'bg-light text-dark';
+      default: return 'bg-dark text-dark';
     }
   };
 

@@ -16,8 +16,11 @@ const TrackingDetails = () => {
         in_transit: { color: 'bg-warning', icon: 'bi-arrow-right-circle', description: 'Order is in transit' },
         delivered: { color: 'bg-success', icon: 'bi-check-circle', description: 'Order has been delivered' },
         cancelled: { color: 'bg-danger', icon: 'bi-x-circle', description: 'Order has been cancelled' },
-        return_requested: { color: 'bg-secondary', icon: 'bi-arrow-return-left', description: 'Return has been requested' },
-        returned: { color: 'bg-dark', icon: 'bi-arrow-counterclockwise', description: 'Order has been returned' }
+        return_requested: { color: 'bg-info', icon: 'bi-arrow-return-left', description: 'Return request initiated' },
+        return_pickup_scheduled: { color: 'bg-primary', icon: 'bi-calendar', description: 'Return pickup scheduled' },
+        return_picked: { color: 'bg-warning', icon: 'bi-box-arrow-left', description: 'Product picked up for return' },
+        return_in_transit: { color: 'bg-info', icon: 'bi-truck', description: 'Product in transit back to seller' },
+        returned: { color: 'bg-success', icon: 'bi-check-circle', description: 'Product returned to seller' }
     };
 
     useEffect(() => {
