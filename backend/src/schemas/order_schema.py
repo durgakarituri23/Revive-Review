@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict
 
 class OrderItemSchema(BaseModel):
     product_id: str
@@ -7,6 +7,16 @@ class OrderItemSchema(BaseModel):
     quantity: int
     price: float
     images: List[str] = []
+
+class TrackingUpdate(BaseModel):
+    status: str
+    timestamp: str
+    description: str
+
+class ShippingAddress(BaseModel):
+    name: str
+    address: str
+    postal_code: str
 
 class OrderCreateSchema(BaseModel):
     buyer_email: str
@@ -16,4 +26,7 @@ class OrderCreateSchema(BaseModel):
     payment_method: dict
 
 class OrderUpdateSchema(BaseModel):
-    status: str
+    status: str = Field(
+        ..., 
+        description="Order status (placed, shipped, in_transit, delivered, cancelled, return_requested, returned)"
+    )

@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, Query
 from typing import List
 from src.schemas.order_schema import OrderCreateSchema, OrderUpdateSchema
 from src.models.order import OrderModel
-from src.services.order_services import create_order, get_user_orders, get_order_by_id, update_order_status
+from src.services.order_services import (
+    create_order,
+    get_user_orders,
+    get_order_by_id,
+    update_order_status,
+)
 from src.config.auth_middleware import buyer_only
 
 router = APIRouter(prefix="/orders", tags=["orders"])
