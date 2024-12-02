@@ -4,7 +4,7 @@ from src.schemas.complaint import ComplaintCreate, ComplaintResponse, ComplaintC
 from typing import List
 from bson import ObjectId
 from typing import Optional
-from src.services.complaint_service import (create_complaint, fetch_complaints_by_status, close_complaint)
+from src.services.complaint_service import (create_complaint, fetch_complaints_by_status)
 
 router = APIRouter()
 

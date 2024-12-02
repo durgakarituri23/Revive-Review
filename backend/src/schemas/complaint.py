@@ -25,3 +25,6 @@ class ComplaintResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ComplaintCloseRequest(BaseModel):
+    resolution: str  

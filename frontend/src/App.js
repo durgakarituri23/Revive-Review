@@ -31,6 +31,8 @@ import ProductReview from './pages/ProductReview';
 import ManageProfile from './pages/manageProfile';
 import OrderDetails from './pages/OrderDetails';
 import TrackingDetails from './pages/TrackingDetails';
+import ComplaintsPage from './pages/ComplaintsPage';
+import RaiseComplaint from './pages/RaiseComplaint';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
