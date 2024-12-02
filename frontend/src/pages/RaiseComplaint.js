@@ -5,18 +5,37 @@ import { useAuth } from "../contexts/AuthContext";
 const RaiseComplaint = () => {
   const navigate = useNavigate();
   const { user } = useAuth(); // Access the user object
-  const [issueType, setIssueType] = useState("");
-  const [details, setDetails] = useState("");
+  const [issueType, setIssueType] = useState(""); // Issue type state
+  const [details, setDetails] = useState(""); // Details state
   const [orderID, setOrderID] = useState(""); // State for Order ID
   const [message, setMessage] = useState(""); // Message state
+  const [detailsError, setDetailsError] = useState(""); // Error state for details field
 
   const handleOrderIDChange = (e) => {
     setOrderID(e.target.value);
     setMessage(""); // Clear message when the user updates the Order ID field
   };
 
+  const handleDetailsChange = (e) => {
+    const value = e.target.value;
+    setDetails(value);
+
+    // Validate minimum length
+    if (value.length > 0 && value.length < 15) {
+      setDetailsError("Please enter at least 15 characters.");
+    } else {
+      setDetailsError(""); // Clear error if valid
+    }
+  };
+
   const submitComplaint = async (event) => {
     event.preventDefault();
+
+    // Check for minimum length validation before submission
+    if (details.length < 15) {
+      setDetailsError("Please enter at least 15 characters.");
+      return;
+    }
 
     const payload = {
       firstname: user.first_name,
@@ -53,6 +72,10 @@ const RaiseComplaint = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1); // Redirect to the previous page
+  };
+
   return (
     <div className="container mt-4">
       <h1 className="mb-4">
@@ -74,7 +97,6 @@ const RaiseComplaint = () => {
               <option value="">Select an Issue</option>
               <option value="Product Return">Product Return</option>
               <option value="Website Issue">Website Issue</option>
-              <option value="Other">Other</option>
             </select>
           </div>
 
@@ -105,19 +127,31 @@ const RaiseComplaint = () => {
             className="form-control"
             rows="5"
             value={details}
-            onChange={(e) => setDetails(e.target.value)}
+            onChange={handleDetailsChange}
             placeholder={
               issueType === "Product Return"
                 ? "Enter the reason to return the product"
-                : "Enter the issue"
+                : "Describe the issue in detail"
             }
             required
           ></textarea>
+          {detailsError && (
+            <p className="text-danger mt-1">{detailsError}</p> // Show error message
+          )}
         </div>
 
-        <button type="submit" className="btn btn-primary">
-          <i className="bi bi-send-fill me-2"></i>Submit Complaint
-        </button>
+        <div className="d-flex justify-content-start">
+          <button
+            type="button"
+            className="btn btn-secondary me-2"
+            onClick={handleBack}
+          >
+            Back
+          </button>
+          <button type="submit" className="btn btn-primary">
+            Submit Complaint
+          </button>
+        </div>
       </form>
 
       {message && <p className="mt-4 alert alert-info">{message}</p>}
