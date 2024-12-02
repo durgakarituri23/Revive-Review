@@ -31,6 +31,8 @@ import ProductReview from './pages/ProductReview';
 import ManageProfile from './pages/manageProfile';
 import OrderDetails from './pages/OrderDetails';
 import TrackingDetails from './pages/TrackingDetails';
+import ComplaintsPage from './pages/ComplaintsPage';
+import RaiseComplaint from './pages/RaiseComplaint';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -174,6 +176,22 @@ function App() {
                     </BuyerRoute>
                   }
                 />
+                <Route
+	                path="/complaints"
+	                element={
+	                  <BuyerRoute>
+	                    <ComplaintsPage />
+	                  </BuyerRoute>
+	                }
+	              />
+	              <Route
+	                path="/raisecomplaint"
+	                element={
+	                  <BuyerRoute>
+	                    <RaiseComplaint />
+	                  </BuyerRoute>
+	                }
+	              />
                 {/* Protected Home Route with Role-Based Content */}
                 <Route
                   path="/"

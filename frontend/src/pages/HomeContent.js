@@ -89,14 +89,28 @@ const HomeContent = () => {
   const handleSortChange = (e) => {
     const selectedSort = e.target.value;
     setSortOption(selectedSort);
-    let sortedProducts = [...products];
-    if (selectedSort === "price") {
+    let sortedProducts = [...products];  // Create copy of products array
+
+    if (selectedSort === "price-low-high") {
       sortedProducts.sort((a, b) => a.price - b.price);
-    } else if (selectedSort === "date") {
-      sortedProducts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } 
+    else if (selectedSort === "price-high-low") {
+      sortedProducts.sort((a, b) => b.price - a.price);
+    } 
+    else if (selectedSort === "date-newest") {
+      sortedProducts.sort((a, b) => 
+        new Date(b.reviewed_at || b._id) - new Date(a.reviewed_at || a._id)
+      );
     }
+    else if (selectedSort === "date-oldest") {
+      sortedProducts.sort((a, b) => 
+        new Date(a.reviewed_at || a._id) - new Date(b.reviewed_at || b._id)
+      );
+    }
+
     setProducts(sortedProducts);
-  };
+    setCurrentPage(1); // Reset to first page after sorting
+};
 
   const handleAddToCart = async (product) => {
     if (!userEmail) {
@@ -191,14 +205,12 @@ const HomeContent = () => {
           <div className="d-flex align-items-center">
             <label htmlFor="sort" className="form-label me-2 mb-0">Sort:</label>
             <select
-              className="form-select"
-              id="sort"
-              value={sortOption}
-              onChange={handleSortChange}
-            >
-              <option value="" disabled>Select below options</option>
-              <option value="price">Price</option>
-              <option value="date">Date</option>
+                className="form-select" id="sort" value={sortOption} onChange={handleSortChange}>
+               <option value="">Select sort option</option>
+               <option value="price-low-high">Price: Low to High</option>
+               <option value="price-high-low">Price: High to Low</option>
+               <option value="date-newest">Date: Newest First</option>
+               <option value="date-oldest">Date: Oldest First</option>
             </select>
           </div>
         </div>

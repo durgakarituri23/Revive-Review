@@ -86,9 +86,8 @@ async def create_user(register: User):
     register_data["role"] = "buyer"  # Set default role as buyer
     await users.insert_one(register_data)
 
-    Smtp.send_registration_email(
+    Smtp.trigger_email(
         register.email,
-        register.first_name,
         "Welcome to Our Platform",
         f"Hello {register.first_name},\n\nThank you for registering. We are excited to have you on board!",
     )
@@ -144,7 +143,7 @@ async def generate_auth_code(password):
     random_number = str(random.randint(1000, 9999))
     response_data = {"code": random_number}
 
-    Smtp.send_auth_code(
+    Smtp.trigger_email(
         password.email, "Hello user ", f"Here is your auth code {random_number}"
     )
     return AuthCode(**response_data)
@@ -178,9 +177,8 @@ async def create_seller(register):
     register_data["role"] = "seller"  # Set role as seller
     await users.insert_one(register_data)
 
-    Smtp.send_registration_email(
+    Smtp.trigger_email(
         register.email,
-        register.first_name,
         "Welcome to Our Platform",
         f"Hello {register.first_name},\n\nThank you for registering as a seller. We are excited to have you on board!",
     )
@@ -347,7 +345,11 @@ async def create_first_admin(register: RegisterModel):
     register_data = register.dict()
     register_data["role"] = "admin"
     await users.insert_one(register_data)
-
+    Smtp.trigger_email(
+        register.email,
+        "Welcome to Our Platform",
+        f"Hello {register.first_name},\n\nThank you for registering as a Admin. We are excited to have you on board!",
+    )
     return UserResponseModel(
         first_name=register.first_name,
         last_name=register.last_name,

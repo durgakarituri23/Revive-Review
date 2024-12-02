@@ -23,5 +23,8 @@ class ComplaintResponse(BaseModel):
     orderID: Optional[str] 
     
     class Config:
-        from_attributes = True  # Updated for Pydantic v2
+        from_attributes = True
 
+
+class ComplaintCloseRequest(BaseModel):
+    resolution: str  

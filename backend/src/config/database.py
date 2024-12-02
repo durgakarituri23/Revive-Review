@@ -9,6 +9,6 @@ product_collection = database.ProductDetails
 cart = database.Cart
 payment_methods = database.PaymentDetails
 category = database.Categories
-complaint_collection = database.Complaints
 orders = database.Orders
+complaint_collection = database.Complaints
 
