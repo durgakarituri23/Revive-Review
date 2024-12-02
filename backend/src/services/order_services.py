@@ -12,13 +12,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 STATUS_DESCRIPTIONS = {
-    "placed": "Order has been placed successfully",
-    "shipped": "Order has been shipped",
-    "in_transit": "Order is in transit",
-    "delivered": "Order has been delivered",
+    "placed": "Order has been placed",
+    "shipped": "Your order has been shipped from our warehouse",
+    "in_transit": "Your order is on its way to you",
+    "delivered": "Your order has been delivered",
     "cancelled": "Order has been cancelled",
-    "return_requested": "Return has been requested",
-    "returned": "Order has been returned",
+    "return_requested": "Return request has been initiated",
+    "return_pickup_scheduled": "Return pickup has been scheduled",
+    "return_picked": "Product has been picked up for return",
+    "return_in_transit": "Product is in transit back to seller",
+    "returned": "Product has been returned to seller",
 }
 
 
@@ -58,60 +61,127 @@ async def create_order(order_data: OrderCreateSchema) -> OrderModel:
 async def update_order_status_based_on_time(order: OrderModel) -> str:
     order_date = datetime.fromisoformat(order.order_date)
     current_time = datetime.now()
-    time_diff = (current_time - order_date).total_seconds() / 60  # difference in minutes
+    time_diff = (current_time - order_date).total_seconds()  # difference in seconds
 
-    if time_diff < 1:
-        return "placed"
-    elif time_diff < 2:
+    # More realistic timing for testing
+    if order.status == "placed" and time_diff >= 30:  # 30 seconds after placed
         return "shipped"
-    elif time_diff < 3:
+    elif order.status == "shipped" and time_diff >= 60:  # 1 minute after placed
         return "in_transit"
-    elif time_diff < 4:
+    elif order.status == "in_transit" and time_diff >= 90:  # 1.5 minutes after placed
         return "delivered"
-    
+
     return order.status
 
 
+async def handle_return_status_updates(order: OrderModel) -> str:
+    print("Starting return status update flow")
+    return_date = None
+
+    for history in reversed(order.tracking_history):
+        if history.status == "return_requested":
+            return_date = datetime.fromisoformat(history.timestamp)
+            print(f"Found return request date: {return_date}")
+            break
+
+    if not return_date:
+        print("No return date found")
+        return order.status
+
+    time_diff = (datetime.now() - return_date).total_seconds() / 60
+    print(f"Time difference in minutes: {time_diff}")
+
+    # Return next status based on time difference, regardless of current status
+    if time_diff > 4:  # More than 4 minutes
+        try:
+            # Update product status when return is complete
+            for item in order.items:
+                await product_collection.update_one(
+                    {"_id": item.product_id},
+                    {
+                        "$set": {
+                            "status": "approved",
+                            "buyer_email": None,
+                            "sold_at": None,
+                        }
+                    },
+                )
+            print("Products marked as available")
+            return "returned"
+        except Exception as e:
+            print(f"Error updating product status: {e}")
+            return order.status
+    elif time_diff > 3:  # Between 3-4 minutes
+        return "return_in_transit"
+    elif time_diff > 2:  # Between 2-3 minutes
+        return "return_picked"
+    elif time_diff > 1:  # Between 1-2 minutes
+        return "return_pickup_scheduled"
+    else:  # Less than 1 minute
+        return "return_requested"
+
+
 async def update_order_status(order_id: str, status: str) -> OrderModel:
-    """Update order status and tracking history"""
     try:
+        print(f"Updating order {order_id} to status: {status}")
         order = await get_order_by_id(order_id)
-        
-        # If not a manual status change (cancel/return), calculate status based on time
-        if status not in ['cancelled', 'return_requested', 'returned']:
-            status = await update_order_status_based_on_time(order)
-        
-        # Create new tracking entry only if status has changed
-        if status != order.status:
+        print(f"Current order status: {order.status}")
+
+        # Check if we should auto-update based on time
+        if order.status == "placed":
+            new_status = await update_order_status_based_on_time(order)
+            print(f"Time-based status update: {new_status}")
+        # Handle initial return request
+        elif status == "return_requested" and order.status == "delivered":
+            print("Handling initial return request")
+            new_status = "return_requested"
+        # Handle return flow updates
+        elif order.status.startswith("return_"):
+            print("Entering return flow")
+            new_status = await handle_return_status_updates(order)
+            print(f"Status after return flow: {new_status}")
+        else:
+            new_status = status
+
+        print(f"New status to be set: {new_status}")
+
+        # Only update if status has changed
+        if new_status != order.status:
             new_tracking = TrackingHistory(
-                status=status,
+                status=new_status,
                 timestamp=datetime.now().isoformat(),
-                description=STATUS_DESCRIPTIONS.get(status, f"Status updated to {status}")
+                description=STATUS_DESCRIPTIONS.get(new_status),
             )
 
-            # Determine can_cancel and can_return based on status
-            can_cancel = status in ["placed", "shipped"]
-            can_return = status == "delivered"
-
-            # Update order
             result = await orders.update_one(
                 {"_id": order_id},
                 {
                     "$set": {
-                        "status": status,
-                        "can_cancel": can_cancel,
-                        "can_return": can_return
+                        "status": new_status,
+                        "can_cancel": False
+                        if new_status.startswith("return_")
+                        else new_status in ["placed", "shipped"],
+                        "can_return": new_status == "delivered",
                     },
-                    "$push": {"tracking_history": new_tracking.dict()}
-                }
+                    "$push": {"tracking_history": new_tracking.dict()},
+                },
             )
 
             if result.modified_count == 0:
                 raise HTTPException(status_code=404, detail="Order not found")
 
-        return await get_order_by_id(order_id)
+        # After update, check if we need to move to next status
+        updated_order = await get_order_by_id(order_id)
+        if updated_order.status == new_status:
+            next_status = await update_order_status_based_on_time(updated_order)
+            if next_status != new_status:
+                return await update_order_status(order_id, next_status)
+
+        print(f"Returning order with final status: {updated_order.status}")
+        return updated_order
 
     except Exception as e:
+        print(f"Error in update_order_status: {str(e)}")
         logger.error(f"Error updating order status: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
