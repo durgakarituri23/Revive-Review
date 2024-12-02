@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from src.config.database import complaint_collection
 from src.schemas.complaint import ComplaintCreate, ComplaintResponse, ComplaintCloseRequest
@@ -74,25 +73,5 @@ async def fetch_complaints_status(
     try:
         complaints = await fetch_complaints_by_status(status, user_role, email)
         return complaints
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.patch("/{complaint_id}/close", status_code=200)
-async def close_complaint_route(
-    complaint_id: str,
-    request: ComplaintCloseRequest,  # Validate resolution field using the schema
-    background_tasks: BackgroundTasks,
-    user_role: str = "admin"
-):
-    """
-    Close a complaint by updating its status to 'Closed' and adding a resolution message.
-    """
-    try:
-        if user_role != "admin":
-            raise HTTPException(status_code=403, detail="Only admins can close complaints.")
-        
-        # Call the service function to close the complaint
-        response = await close_complaint(complaint_id, request.resolution, background_tasks)
-        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

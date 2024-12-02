@@ -174,6 +174,22 @@ function App() {
                     </BuyerRoute>
                   }
                 />
+                <Route
+	                path="/complaints"
+	                element={
+	                  <BuyerRoute>
+	                    <ComplaintsPage />
+	                  </BuyerRoute>
+	                }
+	              />
+	              <Route
+	                path="/raisecomplaint"
+	                element={
+	                  <BuyerRoute>
+	                    <RaiseComplaint />
+	                  </BuyerRoute>
+	                }
+	              />
                 {/* Protected Home Route with Role-Based Content */}
                 <Route
                   path="/"

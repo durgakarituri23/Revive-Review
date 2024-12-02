@@ -69,6 +69,9 @@ const Header = () => {
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/vieworders">My Orders</Link>
                   </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/complaints">Complaints</Link>
+                  </li>
                 </>
               ) : user.role === 'seller' ? (
                 // Seller navigation
