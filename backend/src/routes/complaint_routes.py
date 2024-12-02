@@ -1,10 +1,11 @@
+
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from src.config.database import complaint_collection
-from src.schemas.complaint import ComplaintCreate, ComplaintResponse
+from src.schemas.complaint import ComplaintCreate, ComplaintResponse, ComplaintCloseRequest
 from typing import List
 from bson import ObjectId
 from typing import Optional
-from src.services.complaint_service import (create_complaint)
+from src.services.complaint_service import (create_complaint, fetch_complaints_by_status, close_complaint)
 
 router = APIRouter()
 
@@ -49,28 +50,49 @@ async def fetch_all_complaints(email: str):
         for complaint in complaints
     ]
 
-
-
-
-@router.patch("/{complaint_id}", status_code=200)
-async def update_complaint(complaint_id: str, status: str, resolution: Optional[str] = None):
+@router.get("/{complaint_id}", response_model=ComplaintResponse)
+async def get_complaint(complaint_id: str):
     try:
-        update_data = {"status": status}
-        if resolution:
-            update_data["resolution"] = resolution
+        complaint = await complaint_collection.find_one({"_id": ObjectId(complaint_id)})
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Complaint not found.")
+        complaint["id"] = str(complaint["_id"])
+        complaint.pop("_id")
+        return complaint
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        result = await complaint_collection.update_one(
-            {"_id": ObjectId(complaint_id)},
-            {"$set": update_data}
-        )
+@router.get("/status/{status}", response_model=List[ComplaintResponse])
+async def fetch_complaints_status(
+    status: str,
+    email: Optional[str] = None,
+    user_role: str = "admin",
+):
+    """
+    Fetch complaints by status. Admin can view all; buyers can view their own.
+    """
+    try:
+        complaints = await fetch_complaints_by_status(status, user_role, email)
+        return complaints
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        if result.modified_count == 1:
-            updated_complaint = await complaint_collection.find_one({"_id": ObjectId(complaint_id)})
-            if updated_complaint:
-                updated_complaint["id"] = str(updated_complaint["_id"])
-                updated_complaint.pop("_id")
-                return updated_complaint
-
-        raise HTTPException(status_code=404, detail="Complaint not found or not updated")
+@router.patch("/{complaint_id}/close", status_code=200)
+async def close_complaint_route(
+    complaint_id: str,
+    request: ComplaintCloseRequest,  # Validate resolution field using the schema
+    background_tasks: BackgroundTasks,
+    user_role: str = "admin"
+):
+    """
+    Close a complaint by updating its status to 'Closed' and adding a resolution message.
+    """
+    try:
+        if user_role != "admin":
+            raise HTTPException(status_code=403, detail="Only admins can close complaints.")
+        
+        # Call the service function to close the complaint
+        response = await close_complaint(complaint_id, request.resolution, background_tasks)
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
