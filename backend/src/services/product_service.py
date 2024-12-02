@@ -2,8 +2,10 @@ import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from src.models.product import ProductModel, Category
 import os
+from smtp import Smtp
 from fastapi import UploadFile, HTTPException
-from src.config.database import product_collection
+from src.config.database import product_collection, users
+from fastapi import BackgroundTasks
 from src.schemas.product_schema import (
     UpdateProductRequest,
     UpdateProductDetails,
@@ -28,9 +30,10 @@ async def save_image(image: UploadFile):
     return filename
 
 
-async def upload_products(product_data: dict, images: List[UploadFile]):
+
+async def upload_products(product_data: dict, images: List[UploadFile],background_tasks: BackgroundTasks):
     try:
-        # Save images first
+        # Save images
         image_filenames = []
         for image in images:
             if image:
@@ -53,22 +56,49 @@ async def upload_products(product_data: dict, images: List[UploadFile]):
         # Create ProductModel instance
         product = ProductModel(**validated_data)
 
-        # Insert into database using insert_one
+        # Insert into database
         result = await product_collection.insert_one(product.dict(by_alias=True))
 
-        # Fetch and return the inserted product
         if result.inserted_id:
             created_product = await product_collection.find_one(
                 {"_id": str(result.inserted_id)}
             )
+            
+            # Fetch seller details for email notification
+            seller = await users.find_one({"business_name": product_data["seller_id"]})
+            #print("seller", seller)
+            # Send confirmation email to seller
+            if seller and seller.get("email"):
+                background_tasks.add_task(
+                    Smtp.trigger_email,  # Using the static method directly
+                    seller["email"],
+                    "Product Submission Confirmation",
+                    f"Your product '{product_data['product_name']}' has been submitted for review. "
+                    f"You can track its status in your seller dashboard."
+                )
+                
+
+            # Send notification to all admins
+            admin_users = users.find({"role": "admin"})
+            async for admin in admin_users:
+                if admin.get("email"):
+                    background_tasks.add_task(
+                        Smtp.trigger_email,
+                        admin["email"],
+                        "New Product Submission",
+                        f"A new product '{product_data['product_name']}' has been submitted for review by seller "
+                        f"{product_data['seller_id']}. Please review it in the admin dashboard."
+                    )
+
             return ProductModel(**created_product)
 
         raise HTTPException(status_code=500, detail="Failed to create product")
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
         print(f"Error in upload_products: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-
 
 async def get_seller_products_by_id(seller_id: str):
     products = []
@@ -218,7 +248,7 @@ async def delete_seller_product(product_id: str, seller_id: str):
     return {"message": "Product deleted successfully"}
 
 
-async def review_product(product_id: str, review_data: dict):
+async def review_product(product_id: str, review_data: dict, background_tasks: BackgroundTasks = BackgroundTasks()):
     update_data = {
         "status": "approved" if review_data["isApproved"] else "rejected",
         "admin_comments": review_data["admin_comments"],
@@ -228,13 +258,34 @@ async def review_product(product_id: str, review_data: dict):
     result = await product_collection.update_one(
         {"_id": product_id}, {"$set": update_data}
     )
-
+    
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    # Fetch updated product
     updated_product = await product_collection.find_one({"_id": product_id})
-    return ProductModel(**updated_product)
+    
+    # Fetch seller details for notification
+    seller = await users.find_one({"business_name": updated_product["seller_id"]})
+    
+    # Send notification to seller about review outcome
+    if seller and seller.get("email"):
+        status = "approved" if review_data["isApproved"] else "rejected"
+        message = (
+            f"Your product '{updated_product['product_name']}' has been {status}. "
+            f"Admin comments: {review_data['admin_comments']}"
+        )
+        
+        if not review_data["isApproved"]:
+            message += "\nYou can make the suggested changes and resubmit the product for review."
+        background_tasks.add_task(          
+            Smtp.trigger_email,
+            seller["email"],
+            f"Product {status.capitalize()}",
+            message
+        )
 
+    return ProductModel(**updated_product)
 
 async def update_product_sold_status(product_id: str, buyer_email: str):
     try:

@@ -96,7 +96,7 @@ const Header = () => {
                     <Link className="nav-link text-white" to="/manage-profile">Manage Profile</Link>
                   </li>
                   <li className="nav-item">
-                    <Link className="nav-link text-white" to="/unapproved-products">Approve Products</Link>
+                    <Link className="nav-link text-white" to="/unapproved-products">Verify Products</Link>
                   </li>
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/manage-categories">
