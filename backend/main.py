@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from src.routes import auth_routes, product_routes, user_routes, cart_routes, complaint_routes
+from src.routes import auth_routes, product_routes, user_routes, cart_routes
 
 app = FastAPI()
 
@@ -42,8 +42,7 @@ app.mount(
 app.include_router(auth_routes.router)   
 app.include_router(product_routes.router)  
 app.include_router(cart_routes.router)  
-app.include_router(user_routes.router)  
-app.include_router(complaint_routes.router, prefix="/complaints", tags=["Complaints"])
+app.include_router(user_routes.router)
 
 @app.get("/")
 async def root():
