@@ -16,7 +16,7 @@ STATUS_DESCRIPTIONS = {
     "shipped": "Your order has been shipped from our warehouse",
     "in_transit": "Your order is on its way to you",
     "delivered": "Your order has been delivered",
-    "cancelled": "Order has been cancelled",
+    "cancelled": "Order has been cancelled and products restored to inventory",
     "return_requested": "Return request has been initiated",
     "return_pickup_scheduled": "Return pickup has been scheduled",
     "return_picked": "Product has been picked up for return",
@@ -127,8 +127,29 @@ async def update_order_status(order_id: str, status: str) -> OrderModel:
         order = await get_order_by_id(order_id)
         print(f"Current order status: {order.status}")
 
+        # Handle cancellation
+        if status == "cancelled":
+            if not order.can_cancel:
+                raise HTTPException(status_code=400, detail="Order cannot be cancelled")
+
+            print("Processing order cancellation")
+            # Restore products to available state
+            for item in order.items:
+                print(f"Restoring product {item.product_id}")
+                await product_collection.update_one(
+                    {"_id": item.product_id},
+                    {
+                        "$set": {
+                            "status": "approved",
+                            "buyer_email": None,
+                            "sold_at": None,
+                        }
+                    },
+                )
+            new_status = "cancelled"
+
         # Check if we should auto-update based on time
-        if order.status == "placed":
+        elif order.status == "placed":
             new_status = await update_order_status_based_on_time(order)
             print(f"Time-based status update: {new_status}")
         # Handle initial return request
@@ -150,18 +171,17 @@ async def update_order_status(order_id: str, status: str) -> OrderModel:
             new_tracking = TrackingHistory(
                 status=new_status,
                 timestamp=datetime.now().isoformat(),
-                description=STATUS_DESCRIPTIONS.get(new_status),
+                description=STATUS_DESCRIPTIONS.get(new_status, "Status updated"),
             )
 
+            # Update the STATUS_DESCRIPTIONS dict to include cancelled status
             result = await orders.update_one(
                 {"_id": order_id},
                 {
                     "$set": {
                         "status": new_status,
-                        "can_cancel": False
-                        if new_status.startswith("return_")
-                        else new_status in ["placed", "shipped"],
-                        "can_return": new_status == "delivered",
+                        "can_cancel": False,  # Once cancelled, can't cancel again
+                        "can_return": False,  # Cancelled orders can't be returned
                     },
                     "$push": {"tracking_history": new_tracking.dict()},
                 },
@@ -170,13 +190,7 @@ async def update_order_status(order_id: str, status: str) -> OrderModel:
             if result.modified_count == 0:
                 raise HTTPException(status_code=404, detail="Order not found")
 
-        # After update, check if we need to move to next status
         updated_order = await get_order_by_id(order_id)
-        if updated_order.status == new_status:
-            next_status = await update_order_status_based_on_time(updated_order)
-            if next_status != new_status:
-                return await update_order_status(order_id, next_status)
-
         print(f"Returning order with final status: {updated_order.status}")
         return updated_order
 
