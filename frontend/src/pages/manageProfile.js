@@ -1,161 +1,420 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ManageProfile = () => {
-  const userEmail = localStorage.getItem('userEmail');
+  const { userEmail, userRole } = useAuth();
+  const navigate = useNavigate();
+
+
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State management for form fields
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState(userEmail || ''); // Use the email from localStorage
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [postalCode, setPostalCode] = useState('');
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    postalCode: '',
+    businessName: '',
+    taxId: ''
+  });
 
-  // Fetch user details from the backend when the component mounts
-  useEffect(() => {
-    if (userEmail) {
-      // Make an API call to fetch the user's details
-      const fetchUserDetails = async () => {
-        try {
-          const response = await axios.get(`http://localhost:8000/get-user-details?email=${userEmail}`);
-          const userData = response.data;
+  // Validation rules
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'firstName':
+        return value.length < 2
+          ? 'First name must be at least 2 characters long'
+          : !/^[A-Za-z\s]+$/.test(value)
+            ? 'First name should only contain letters'
+            : '';
 
-          // Update the state with the fetched user data
-          setFirstName(userData.first_name);
-          setLastName(userData.last_name);
-          setPhone(userData.phone);
-          setAddress(userData.address);
-          setPostalCode(userData.postal_code);
-        } catch (error) {
-          console.error('Error fetching user details:', error);
+      case 'lastName':
+        return value.length < 2
+          ? 'Last name must be at least 2 characters long'
+          : !/^[A-Za-z\s]+$/.test(value)
+            ? 'Last name should only contain letters'
+            : '';
+
+      case 'phone':
+        return value.length !== 10
+          ? 'Phone number must be 10 digits'
+          : !/^\d+$/.test(value)
+            ? 'Phone number should only contain numbers'
+            : '';
+
+      case 'businessName':
+        if (userRole === 'seller') {
+          return value.length < 3
+            ? 'Business name must be at least 3 characters long'
+            : !/^[A-Za-z0-9\s\-&.,]+$/.test(value)
+              ? 'Business name contains invalid characters'
+              : '';
         }
-      };
+        return '';
 
-      fetchUserDetails();
-    }
-  }, [userEmail]);
+      case 'address':
+        return value.length < 10
+          ? 'Please enter a complete address (at least 10 characters)'
+          : !/^[A-Za-z0-9\s\-,.'#]+$/.test(value)
+            ? 'Address contains invalid characters'
+            : '';
 
-  // Handle form submission and send the updated data to the backend
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+      case 'postalCode':
+        return !/^[A-Z0-9\s-]{4,10}$/i.test(value)
+          ? 'Please enter a valid postal code'
+          : '';
 
-    // The updated user data to send to the backend
-    const updatedData = {
-      first_name: firstName,
-      last_name: lastName,
-      email: email,
-      phone: phone,
-      address: address,
-      postal_code: postalCode
-    };
-
-    try {
-      // Send the updated user data to the backend
-      const response = await axios.post('http://localhost:8000/update-user-details', updatedData);
-
-      if (response.status === 200) {
-        console.log('Profile updated successfully');
-        // alert('Profile Updated Successfully!');
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    //   alert('Error updating profile');
+      default:
+        return '';
     }
   };
 
+  // Fetch user details
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          setError('No authentication token found');
+          setIsLoading(false);
+          return;
+        }
+
+
+        const response = await fetch(`http://localhost:8000/get-user-details?email=${userEmail}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to fetch user details');
+        }
+
+        const userData = await response.json();
+
+        setFormData({
+          firstName: userData.first_name || '',
+          lastName: userData.last_name || '',
+          email: userEmail || '',
+          phone: userData.phone || '',
+          address: userData.address || '',
+          postalCode: userData.postal_code || '',
+          businessName: userData.business_name || '',
+          taxId: userData.tax_id || ''
+        });
+      } catch (error) {
+        console.error('Error in fetchUserDetails:', error);
+        setError('Error fetching user details: ' + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userEmail) {
+      fetchUserDetails();
+    } else {
+      setIsLoading(false);
+      setError('No user email found');
+    }
+  }, [userEmail]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue
+      }));
+      setErrors(prev => ({
+        ...prev,
+        [name]: validateField(name, numericValue)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+      setErrors(prev => ({
+        ...prev,
+        [name]: validateField(name, value)
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach(key => {
+      if (key !== 'email' && key !== 'taxId') {
+        const error = validateField(key, formData[key]);
+        if (error) newErrors[key] = error;
+      }
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setMessage('');
+    setError('');
+
+    if (!validateForm()) {
+      setError('Please fix the validation errors before submitting.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No authentication token found');
+        return;
+      }
+
+      const updatedData = {
+        email: userEmail,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        address: formData.address || '',
+        postal_code: formData.postalCode || ''
+      };
+
+      if (userRole === 'seller') {
+        updatedData.business_name = formData.businessName;
+        updatedData.tax_id = formData.taxId;
+      }
+
+
+      const response = await fetch('http://localhost:8000/update-user-details', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to update profile');
+      }
+
+      setMessage('Profile updated successfully!');
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setError(error.message || 'Failed to update profile. Please try again.');
+      window.scrollTo(0, 0);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getInputClassName = (fieldName) => {
+    return `form-control ${errors[fieldName] ? 'is-invalid' : formData[fieldName] ? 'is-valid' : ''}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mt-4">
+        <div className="text-center">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mt-5">
-      <h2>Manage Profile</h2>
-      <form onSubmit={handleSubmit}>
-        {/* First Name Input */}
-        <div className="mb-3">
-          <label htmlFor="firstName" className="form-label">First Name</label>
-          <input
-            type="text"
-            className="form-control"
-            id="firstName"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            placeholder="Enter your first name"
-            required
-          />
-        </div>
+    <div className="container mt-4">
+      <div className="row justify-content-center">
+        <div className="col-md-8">
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title mb-0">Manage Profile</h3>
+            </div>
+            <div className="card-body">
+              {message && (
+                <div className="alert alert-success" role="alert">
+                  {message}
+                </div>
+              )}
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
 
-        {/* Last Name Input */}
-        <div className="mb-3">
-          <label htmlFor="lastName" className="form-label">Last Name</label>
-          <input
-            type="text"
-            className="form-control"
-            id="lastName"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            placeholder="Enter your last name"
-            required
-          />
-        </div>
+              <form onSubmit={handleSubmit}>
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label htmlFor="firstName" className="form-label">First Name</label>
+                      <input
+                        type="text"
+                        className={getInputClassName('firstName')}
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.firstName && (
+                        <div className="invalid-feedback">{errors.firstName}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label htmlFor="lastName" className="form-label">Last Name</label>
+                      <input
+                        type="text"
+                        className={getInputClassName('lastName')}
+                        id="lastName"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.lastName && (
+                        <div className="invalid-feedback">{errors.lastName}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-        {/* Email Input (Disabled, as email is usually not editable) */}
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label">Email Address</label>
-          <input
-            type="email"
-            className="form-control"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            required
-            disabled // Email should typically be non-editable
-          />
-        </div>
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">Email</label>
+                  <input
+                    type="email"
+                    className="form-control bg-light"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    disabled
+                  />
+                </div>
 
-        {/* Phone Number Input */}
-        <div className="mb-3">
-          <label htmlFor="phone" className="form-label">Phone Number</label>
-          <input
-            type="tel"
-            className="form-control"
-            id="phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Enter your phone number"
-            required
-          />
-        </div>
+                <div className="mb-3">
+                  <label htmlFor="phone" className="form-label">Phone</label>
+                  <input
+                    type="tel"
+                    className={getInputClassName('phone')}
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    maxLength="10"
+                    required
+                  />
+                  {errors.phone && (
+                    <div className="invalid-feedback">{errors.phone}</div>
+                  )}
+                </div>
 
-        {/* Address Input */}
-        <div className="mb-3">
-          <label htmlFor="address" className="form-label">Address</label>
-          <input
-            type="text"
-            className="form-control"
-            id="address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Enter your address"
-            required
-          />
-        </div>
+                <div className="mb-3">
+                  <label htmlFor="address" className="form-label">Address</label>
+                  <input
+                    type="text"
+                    className={getInputClassName('address')}
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.address && (
+                    <div className="invalid-feedback">{errors.address}</div>
+                  )}
+                </div>
 
-        {/* Postal Code Input */}
-        <div className="mb-3">
-          <label htmlFor="postalCode" className="form-label">Postal Code</label>
-          <input
-            type="text"
-            className="form-control"
-            id="postalCode"
-            value={postalCode}
-            onChange={(e) => setPostalCode(e.target.value)}
-            placeholder="Enter your postal code"
-            required
-          />
-        </div>
+                <div className="mb-3">
+                  <label htmlFor="postalCode" className="form-label">Postal Code</label>
+                  <input
+                    type="text"
+                    className={getInputClassName('postalCode')}
+                    id="postalCode"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.postalCode && (
+                    <div className="invalid-feedback">{errors.postalCode}</div>
+                  )}
+                </div>
 
-        {/* Submit Button */}
-        <button type="submit" className="btn btn-primary">Update Profile</button>
-      </form>
+                {userRole === 'seller' && (
+                  <>
+                    <div className="mb-3">
+                      <label htmlFor="businessName" className="form-label">Business Name</label>
+                      <input
+                        type="text"
+                        className={getInputClassName('businessName')}
+                        id="businessName"
+                        name="businessName"
+                        value={formData.businessName}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.businessName && (
+                        <div className="invalid-feedback">{errors.businessName}</div>
+                      )}
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="taxId" className="form-label">Tax ID</label>
+                      <input
+                        type="text"
+                        className="form-control bg-light"
+                        id="taxId"
+                        name="taxId"
+                        value={formData.taxId}
+                        disabled
+                      />
+                    </div>
+                  </>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Updating...
+                    </>
+                  ) : 'Update Profile'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

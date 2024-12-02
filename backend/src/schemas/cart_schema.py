@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel
+from typing import List, Optional, Dict
 
 class UpdateCart(BaseModel):
     email: str
@@ -12,7 +12,17 @@ class DeleteCartProduct(BaseModel):
 
 class CartResponse(BaseModel):
     message: str
-    
+
 class UpdatePaymentStatus(BaseModel):
-    email: EmailStr
+    email: str
     buyed: bool
+    payment_method: Optional[Dict] = None
+
+class CartProduct(BaseModel):
+    productId: str
+    quantity: int
+
+class Cart(BaseModel):
+    email: str
+    products: List[CartProduct]
+    buyed: Optional[bool] = False

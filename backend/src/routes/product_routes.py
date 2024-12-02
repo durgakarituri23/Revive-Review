@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends, Body
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends, Body, BackgroundTasks
 from typing import List, Optional
 from src.config.database import product_collection
 from src.services.product_service import (
@@ -38,6 +38,7 @@ async def upload_product(
     categories: List[str] = Form(...),
     seller_ids: List[str] = Form(...),
     images: List[UploadFile] = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     products = []
     try:
@@ -61,7 +62,8 @@ async def upload_product(
             }
 
             # Upload product
-            product = await upload_products(product_data, product_images)
+            #product = await upload_products(product_data, product_images)
+            product = await upload_products(product_data, product_images, background_tasks)
             products.append(product)
 
         return {"products": products}
@@ -104,7 +106,8 @@ async def get_single_product(product_id: str):  # Changed function name
 
 
 @router.put("/products/{product_id}/resubmit", response_model=ProductModel)
-async def resubmit_product(product_id: str, update_data: dict = Body(...)):
+async def resubmit_product(product_id: str, update_data: dict = Body(...),
+                           background_tasks: BackgroundTasks = BackgroundTasks()):
     try:
         result = await product_collection.update_one(
             {"_id": product_id},
@@ -152,10 +155,11 @@ async def update_product_details(
 @router.put("/products/{product_id}/review", response_model=ProductModel)
 async def review_product_endpoint(
     product_id: str,
-    review_data: UpdateProductRequest = Body(...),  # Change this line
+    review_data: UpdateProductRequest = Body(...), 
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """Review a product with admin comments"""
-    return await review_product(product_id, review_data.dict())
+    return await review_product(product_id, review_data.dict(), background_tasks)
 
 
 @router.get("/categories", response_description="Get all categories")

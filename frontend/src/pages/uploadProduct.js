@@ -5,6 +5,7 @@ const UploadProducts = () => {
   const { user } = useAuth();
   const sellerId = user?.business_name;
   const [categories, setCategories] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [products, setProducts] = useState([
     { productName: '', description: '', price: '', category: '', imageFiles: [], imagePreviews: [] }
   ]);
@@ -110,9 +111,37 @@ const UploadProducts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    for (const product of products) {
+      if (!product.productName || !product.description || !product.price || !product.category || product.imageFiles.length === 0) {
+          alert('Please fill in all required fields and upload at least one image for each product');
+          return;
+      }
+    }
+
     const formData = new FormData();
 
-    products.forEach((product, productIndex) => {
+    // File validation and formData preparation
+    for (const product of products) {
+      // File validation
+      for (const file of product.imageFiles) {
+        if (file.size > (5 * 1024 * 1024)) {
+          alert(`Image ${file.name} is too large. Maximum size is 5MB`);
+          return;
+        }
+
+        const allowedFormats = ['.jpg', '.jpeg', '.png'];
+        const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        if (!allowedFormats.includes(fileExt)) {
+          alert(`Invalid file format for ${file.name}. Allowed formats: jpg, jpeg, png`);
+          return;
+        }
+      }
+    }
+
+    // Prepare form data
+    products.forEach((product) => {
       formData.append('product_names', product.productName);
       formData.append('descriptions', product.description);
       formData.append('prices', product.price);
@@ -125,10 +154,13 @@ const UploadProducts = () => {
     });
 
     try {
+      setIsSubmitting(true);
       const response = await fetch('http://localhost:8000/upload-products', {
         method: 'POST',
         body: formData,
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         // Clean up preview URLs
@@ -136,10 +168,8 @@ const UploadProducts = () => {
           product.imagePreviews.forEach(preview => URL.revokeObjectURL(preview));
         });
 
-        // Reset file inputs
+        // Reset file inputs and form
         resetFileInputs();
-
-        // Reset form state
         setProducts([{
           productName: '',
           description: '',
@@ -149,15 +179,15 @@ const UploadProducts = () => {
           imagePreviews: []
         }]);
 
-        alert('Products uploaded successfully!');
+        alert('Products uploaded successfully! You will receive a confirmation email shortly.');
       } else {
-        const result = await response.json();
-        console.error('Upload failed:', result);
-        alert('Failed to upload products. Please try again.');
+        throw new Error(data.detail || 'Failed to upload products');
       }
     } catch (error) {
       console.error('Error uploading products:', error);
-      alert('Error uploading products. Please check your connection and try again.');
+      alert(error.message || 'Error uploading products. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -285,8 +315,14 @@ const UploadProducts = () => {
             <button
               type="submit"
               className="btn btn-success"
+              disabled={isSubmitting}
             >
-              {products.length > 1 ? 'Upload All Products' : 'Upload Product'}
+              {isSubmitting ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Uploading...
+                </>
+              ) : products.length > 1 ? 'Upload All Products' : 'Submit for Review'}
             </button>
           </div>
         </div>
