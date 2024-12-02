@@ -5,6 +5,7 @@ from src.config.database import users  # Updated to use single collection
 from smtp import Smtp
 from src.schemas.user_schema import (
     UserResponseModel,
+    LoginResponse,
     AuthCode,
     UpdatedPassword,
     RegisterModel,
@@ -220,10 +221,17 @@ async def updateDetails(details):
     if not user or user["email"] != details.email:
         raise HTTPException(status_code=400, detail="Invalid Email")
 
-    update_data = {"address": details.address, "postal_code": details.postal_code}
+    # Base update data for all users
+    update_data = {
+        "first_name": details.first_name,
+        "last_name": details.last_name,
+        "phone": details.phone,
+        "address": details.address,
+        "postal_code": details.postal_code,
+    }
 
     # Include role-specific fields if user is a seller
-    if user["role"] == "seller":
+    if user["role"] == "seller" and details.business_name is not None:
         update_data.update(
             {"business_name": details.business_name, "tax_id": details.tax_id}
         )
@@ -231,6 +239,9 @@ async def updateDetails(details):
     update_result = await users.update_one(
         {"email": details.email}, {"$set": update_data}
     )
+
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="No changes were made")
 
     return {"message": "Details updated successfully"}
 

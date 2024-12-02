@@ -87,7 +87,12 @@ async def get_unapproved_products():
 async def get_approved_products():
     """Products visible to buyers"""
     products = []
-    async for product in product_collection.find({"status": "approved"}):
+    async for product in product_collection.find(
+        {
+            "status": "approved",
+            "$or": [{"sold_at": {"$exists": False}}, {"sold_at": None}],
+        }
+    ):
         products.append(product)
     return products
 
@@ -158,21 +163,20 @@ async def update_product_info(
     updated_product = await product_collection.find_one({"_id": product_id})
     return updated_product
 
+
 async def resubmit_product(product_id: str):
     """
     Resubmit a rejected product for review
     """
     try:
         # First check if product exists and is rejected
-        product = await product_collection.find_one({
-            "_id": product_id,
-            "status": "rejected"
-        })
+        product = await product_collection.find_one(
+            {"_id": product_id, "status": "rejected"}
+        )
 
         if not product:
             raise HTTPException(
-                status_code=404, 
-                detail="Product not found or is not in rejected status"
+                status_code=404, detail="Product not found or is not in rejected status"
             )
 
         # Update product status to pending
@@ -182,9 +186,9 @@ async def resubmit_product(product_id: str):
                 "$set": {
                     "status": "pending",
                     "admin_comments": None,
-                    "reviewed_at": None
+                    "reviewed_at": None,
                 }
-            }
+            },
         )
 
         if result.modified_count == 0:
@@ -197,8 +201,8 @@ async def resubmit_product(product_id: str):
     except Exception as e:
         print(f"Error in resubmit_product: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-    
-    
+
+
 # New function to delete seller's product
 async def delete_seller_product(product_id: str, seller_id: str):
     result = await product_collection.delete_one(
@@ -230,3 +234,23 @@ async def review_product(product_id: str, review_data: dict):
 
     updated_product = await product_collection.find_one({"_id": product_id})
     return ProductModel(**updated_product)
+
+
+async def update_product_sold_status(product_id: str, buyer_email: str):
+    try:
+        result = await product_collection.update_one(
+            {"_id": product_id},
+            {
+                "$set": {
+                    "status": "sold",
+                    "buyer": buyer_email,
+                    "sold_at": datetime.now().isoformat(),
+                }
+            },
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return True
+    except Exception as e:
+        print(f"Error updating product sold status: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
