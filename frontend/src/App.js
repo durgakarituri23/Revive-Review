@@ -28,6 +28,7 @@ import AdminHome from './pages/AdminHome';
 import BuyerProductDetail from './pages/buyerProductDetail';
 import EditProduct from './pages/editProduct';
 import ProductReview from './pages/ProductReview';
+import ManageProfile from './pages/manageProfile';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -162,6 +163,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <RoleBasedHome />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/manage-profile"
+                  element={
+                    <ProtectedRoute>
+                      <ManageProfile />
                     </ProtectedRoute>
                   }
                 />

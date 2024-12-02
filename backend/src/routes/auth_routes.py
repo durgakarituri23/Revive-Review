@@ -27,7 +27,7 @@ from src.services.auth_services import (
     update_user_role_service,
     create_first_admin,
     get_user_stats,
-    search_users
+    search_users,
 )
 from src.config.auth_middleware import (
     check_roles,
@@ -106,13 +106,10 @@ async def get_all_users():
     return await get_all_users_service()
 
 
-# User details routes with ownership checking
 @router.get("/get-user-details", response_model=UserDetails)
 async def get_user_details(email: str, current_user: dict = Depends(get_current_user)):
-    # Check if user is requesting their own details or is an admin
-    if not await check_resource_owner(
-        current_user["email"], email, allowed_roles=["admin"]
-    ):
+    # Simplify the check - users can only get their own details
+    if current_user["email"] != email:
         raise HTTPException(
             status_code=403, detail="You can only view your own details"
         )
@@ -123,10 +120,8 @@ async def get_user_details(email: str, current_user: dict = Depends(get_current_
 async def update_details(
     details: UpdateUserDetails, current_user: dict = Depends(get_current_user)
 ):
-    # Check if user is updating their own details or is an admin
-    if not await check_resource_owner(
-        current_user["email"], details.email, allowed_roles=["admin"]
-    ):
+    # Simplify the check - users can only update their own details
+    if current_user["email"] != details.email:
         raise HTTPException(
             status_code=403, detail="You can only update your own details"
         )
