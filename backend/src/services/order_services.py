@@ -59,3 +59,24 @@ async def get_order_by_id(order_id: str) -> OrderModel:
     except Exception as e:
         logger.error(f"Error fetching order: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+async def update_order_status(order_id: str, status: str) -> OrderModel:
+    """Update order status"""
+    try:
+        valid_statuses = ["completed", "cancelled", "return_requested", "returned"]
+        if status not in valid_statuses:
+            raise HTTPException(status_code=400, detail="Invalid status")
+
+        result = await orders.update_one(
+            {"_id": order_id}, {"$set": {"status": status}}
+        )
+
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        updated_order = await orders.find_one({"_id": order_id})
+        return OrderModel(**updated_order)
+    except Exception as e:
+        logger.error(f"Error updating order status: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))

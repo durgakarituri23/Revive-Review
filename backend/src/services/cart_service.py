@@ -249,7 +249,11 @@ async def update_payment_status(request: UpdatePaymentStatus):
                     product_name=item["product_name"],
                     quantity=item["quantity"],
                     price=float(item["price"]),
-                    image=item["images"][0] if item.get("images") else None,
+                    images=item.get("images", [])
+                    if isinstance(item.get("images"), list)
+                    else [item.get("image")]
+                    if item.get("image")
+                    else [],
                 )
                 for item in cart_items
             ]

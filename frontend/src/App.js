@@ -29,6 +29,7 @@ import BuyerProductDetail from './pages/buyerProductDetail';
 import EditProduct from './pages/editProduct';
 import ProductReview from './pages/ProductReview';
 import ManageProfile from './pages/manageProfile';
+import OrderDetails from './pages/OrderDetails';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -156,7 +157,14 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-
+                <Route
+                  path="/order/:orderId"
+                  element={
+                    <BuyerRoute>
+                      <OrderDetails />
+                    </BuyerRoute>
+                  }
+                />
                 {/* Protected Home Route with Role-Based Content */}
                 <Route
                   path="/"

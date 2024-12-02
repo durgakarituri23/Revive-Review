@@ -8,7 +8,7 @@ class OrderItem(BaseModel):
     product_name: str
     quantity: int
     price: float
-    image: Optional[str]
+    images: List[str] = Field(default_factory=list) 
 
 class OrderModel(BaseModel):
     id: str = Field(default_factory=lambda: str(ObjectId()), alias="_id")

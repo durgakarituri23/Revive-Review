@@ -6,7 +6,7 @@ class OrderItemSchema(BaseModel):
     product_name: str
     quantity: int
     price: float
-    image: Optional[str]
+    images: List[str] = []
 
 class OrderCreateSchema(BaseModel):
     buyer_email: str
