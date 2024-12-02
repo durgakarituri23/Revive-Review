@@ -23,60 +23,53 @@ const OrderDetails = () => {
     };
 
     useEffect(() => {
+        const fetchOrderDetails = async () => {
+            try {
+                const response = await axios.get(`http://localhost:8000/orders/${orderId}`);
+                setOrder(response.data);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching order:', error);
+                setError('Failed to fetch order details');
+                setLoading(false);
+            }
+        };
+
         fetchOrderDetails();
     }, [orderId]);
 
     useEffect(() => {
         if (order) {
+            const initCarousels = () => {
+                const carousels = document.querySelectorAll('.carousel');
+                carousels.forEach(carousel => {
+                    if (!window.bootstrap.Carousel.getInstance(carousel)) {
+                        new window.bootstrap.Carousel(carousel, {
+                            interval: false,
+                            wrap: true
+                        });
+                    }
+                });
+            };
+
             initCarousels();
         }
     }, [order]);
 
-    const initCarousels = () => {
-        const carousels = document.querySelectorAll('.carousel');
-        carousels.forEach(carousel => {
-            if (!window.bootstrap.Carousel.getInstance(carousel)) {
-                new window.bootstrap.Carousel(carousel, {
-                    interval: false,
-                    wrap: true
-                });
-            }
-        });
-    };
-
-    const fetchOrderDetails = async () => {
-        try {
-            const response = await axios.get(`http://localhost:8000/orders/${orderId}`);
-            console.log("Order data:", response.data);
-            setOrder(response.data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Error fetching order:', error);
-            setError('Failed to fetch order details');
-            setLoading(false);
-        }
-    };
-
     const renderProductImages = (item) => {
-        // First try to get images array
         let imageArray = [];
         
         if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-            // If we have an images array, use it
             imageArray = item.images;
         } else if (item.image && typeof item.image === 'string') {
-            // If we have a single image string, put it in an array
             imageArray = [item.image];
         } else {
-            // No images available
             return (
                 <div className="text-center p-4 bg-light" style={{ height: "300px" }}>
                     No images available
                 </div>
             );
         }
-
-        console.log("Processing images for item:", item.product_name, "Images:", imageArray);
 
         const carouselId = `carousel-${item.product_id}`;
 
@@ -90,7 +83,6 @@ const OrderDetails = () => {
                                 alt={`${item.product_name} ${idx + 1}`}
                                 style={imageStyle}
                                 onError={(e) => {
-                                    console.error(`Error loading image: ${image}`);
                                     e.target.onerror = null;
                                     e.target.src = 'placeholder.jpg';
                                 }}
@@ -101,21 +93,11 @@ const OrderDetails = () => {
 
                 {imageArray.length > 1 && (
                     <>
-                        <button 
-                            className="carousel-control-prev" 
-                            type="button" 
-                            data-bs-target={`#${carouselId}`} 
-                            data-bs-slide="prev"
-                        >
+                        <button className="carousel-control-prev" type="button" data-bs-target={`#${carouselId}`} data-bs-slide="prev">
                             <span className="carousel-control-prev-icon" aria-hidden="true"></span>
                             <span className="visually-hidden">Previous</span>
                         </button>
-                        <button 
-                            className="carousel-control-next" 
-                            type="button" 
-                            data-bs-target={`#${carouselId}`} 
-                            data-bs-slide="next"
-                        >
+                        <button className="carousel-control-next" type="button" data-bs-target={`#${carouselId}`} data-bs-slide="next">
                             <span className="carousel-control-next-icon" aria-hidden="true"></span>
                             <span className="visually-hidden">Next</span>
                         </button>
@@ -130,36 +112,78 @@ const OrderDetails = () => {
     };
 
     const handleTrackOrder = () => {
-        alert('Tracking feature coming soon!');
+        navigate(`/order/${orderId}/tracking`);
     };
 
     const handleCancelOrder = async () => {
         try {
+            if (!order.can_cancel) {
+                alert('This order can no longer be cancelled');
+                return;
+            }
+
+            if (!window.confirm('Are you sure you want to cancel this order?')) {
+                return;
+            }
+
             await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
                 status: 'cancelled'
             });
-            fetchOrderDetails();
+            
+            const response = await axios.get(`http://localhost:8000/orders/${orderId}`);
+            setOrder(response.data);
             alert('Order cancelled successfully');
         } catch (error) {
+            console.error('Error cancelling order:', error);
             alert('Failed to cancel order');
         }
     };
 
     const handleReturnOrder = async () => {
         try {
+            if (!order.can_return) {
+                alert('This order is not eligible for return yet');
+                return;
+            }
+
+            if (!window.confirm('Are you sure you want to return this order?')) {
+                return;
+            }
+
             await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
                 status: 'return_requested'
             });
-            fetchOrderDetails();
+            
+            const response = await axios.get(`http://localhost:8000/orders/${orderId}`);
+            setOrder(response.data);
             alert('Return request submitted successfully');
         } catch (error) {
+            console.error('Error requesting return:', error);
             alert('Failed to submit return request');
         }
     };
 
-    if (loading) return <div className="container mt-5 text-center">Loading...</div>;
-    if (error) return <div className="container mt-5 alert alert-danger">{error}</div>;
-    if (!order) return <div className="container mt-5 text-center">Order not found</div>;
+    if (loading) return (
+        <div className="container mt-5">
+            <div className="text-center">
+                <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="container mt-5">
+            <div className="alert alert-danger" role="alert">{error}</div>
+        </div>
+    );
+
+    if (!order) return (
+        <div className="container mt-5">
+            <div className="alert alert-info">Order not found</div>
+        </div>
+    );
 
     return (
         <div className="container py-5">
@@ -167,20 +191,26 @@ const OrderDetails = () => {
                 <div className="col-12">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <div className="d-flex align-items-center gap-3">
-                            <button
-                                onClick={handleBack}
-                                className="btn btn-outline-primary"
-                            >
+                            <button onClick={handleBack} className="btn btn-outline-primary">
                                 <i className="bi bi-arrow-left"></i> Back to Orders
                             </button>
                             <h2 className="mb-0">Order Details</h2>
                         </div>
-                        <span className="badge bg-primary">Status: {order.status}</span>
+                        <div className="d-flex gap-2 align-items-center">
+                            <button onClick={handleTrackOrder} className="btn btn-info">
+                                <i className="bi bi-truck me-2"></i>Track Order
+                            </button>
+                            <span className={`badge bg-${order.status === 'delivered' ? 'success' : 
+                                           order.status === 'cancelled' ? 'danger' : 
+                                           order.status === 'return_requested' ? 'warning' : 'primary'}`}>
+                                {order.status.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="card mb-4">
                         <div className="card-body">
-                            <div className="row">
+                            <div className="row mb-4">
                                 <div className="col-md-6">
                                     <h5>Order Information</h5>
                                     <p><strong>Order ID:</strong> {order._id}</p>
@@ -196,7 +226,7 @@ const OrderDetails = () => {
                             </div>
 
                             <div className="mt-4">
-                                <h5>Items</h5>
+                                <h5>Items Ordered</h5>
                                 {order.items.map((item) => (
                                     <div key={item.product_id} className="card mb-3">
                                         <div className="row g-0">
@@ -206,9 +236,17 @@ const OrderDetails = () => {
                                             <div className="col-md-8">
                                                 <div className="card-body">
                                                     <h5 className="card-title">{item.product_name}</h5>
-                                                    <p className="card-text">Quantity: {item.quantity}</p>
-                                                    <p className="card-text">Price per item: ${item.price.toFixed(2)}</p>
-                                                    <p className="card-text">Subtotal: ${(item.price * item.quantity).toFixed(2)}</p>
+                                                    <div className="row">
+                                                        <div className="col-md-6">
+                                                            <p className="card-text">Quantity: {item.quantity}</p>
+                                                            <p className="card-text">Price per item: ${item.price.toFixed(2)}</p>
+                                                        </div>
+                                                        <div className="col-md-6 text-md-end">
+                                                            <p className="card-text">
+                                                                <strong>Subtotal: ${(item.price * item.quantity).toFixed(2)}</strong>
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -216,31 +254,17 @@ const OrderDetails = () => {
                                 ))}
                             </div>
 
-                            <div className="mt-4">
-                                <div className="d-flex gap-2">
-                                    <button
-                                        className="btn btn-primary"
-                                        onClick={handleTrackOrder}
-                                    >
-                                        Track Order
+                            <div className="mt-4 d-flex gap-2">
+                                {order.can_cancel && (
+                                    <button className="btn btn-danger" onClick={handleCancelOrder}>
+                                        <i className="bi bi-x-circle me-2"></i>Cancel Order
                                     </button>
-                                    {order.status === 'completed' && (
-                                        <>
-                                            <button
-                                                className="btn btn-danger"
-                                                onClick={handleCancelOrder}
-                                            >
-                                                Cancel Order
-                                            </button>
-                                            <button
-                                                className="btn btn-warning"
-                                                onClick={handleReturnOrder}
-                                            >
-                                                Return Order
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
+                                )}
+                                {order.can_return && (
+                                    <button className="btn btn-warning" onClick={handleReturnOrder}>
+                                        <i className="bi bi-arrow-return-left me-2"></i>Return Order
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

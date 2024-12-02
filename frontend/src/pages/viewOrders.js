@@ -24,16 +24,41 @@ const ViewOrders = () => {
   };
 
   useEffect(() => {
+    const fetchOrders = async () => {
+      if (!userEmail) {
+        setError('User email not found. Please log in.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
+        setOrders(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        setError('Failed to fetch orders. Please try again later.');
+        setLoading(false);
+      }
+    };
+
     fetchOrders();
+
+    // Set up polling for active orders
+    const interval = setInterval(() => {
+      if (orders.some(order => !['delivered', 'cancelled', 'returned'].includes(order.status))) {
+        fetchOrders();
+      }
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
   }, [userEmail]);
 
-  // Separate useEffect for carousel initialization
   useEffect(() => {
     if (!loading && orders.length > 0) {
       const initCarousels = () => {
         const carousels = document.querySelectorAll('.carousel');
         carousels.forEach(carousel => {
-          // Only initialize if not already initialized
           if (!window.bootstrap.Carousel.getInstance(carousel)) {
             new window.bootstrap.Carousel(carousel, {
               interval: false,
@@ -47,43 +72,51 @@ const ViewOrders = () => {
     }
   }, [loading, orders]);
 
-  const fetchOrders = async () => {
-    if (!userEmail) {
-      setError('User email not found. Please log in.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
-      console.log("Orders data:", response.data);
-      setOrders(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setError('Failed to fetch orders. Please try again later.');
-      setLoading(false);
-    }
-  };
-
   const handleViewDetails = (orderId) => {
     navigate(`/order/${orderId}`);
   };
 
-  const handleQuickAction = async (orderId, action) => {
+  const handleTrackOrder = (orderId) => {
+    navigate(`/order/${orderId}/tracking`);
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
     try {
       await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
-        status: action
+        status: 'cancelled'
       });
-      await fetchOrders();
-      alert(`Order ${action} successfully`);
+
+      const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
+      setOrders(response.data);
+      alert('Order cancelled successfully');
     } catch (error) {
-      alert(`Failed to ${action} order`);
+      alert('Failed to cancel order');
+    }
+  };
+
+  const handleReturnOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to request a return?')) {
+      return;
+    }
+
+    try {
+      await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
+        status: 'return_requested'
+      });
+
+      const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
+      setOrders(response.data);
+      alert('Return request submitted successfully');
+    } catch (error) {
+      alert('Failed to submit return request');
     }
   };
 
   const renderCarousel = (item, orderId, itemIndex) => {
-    // Get the images array from the item
     const images = Array.isArray(item.images) ? item.images : [item.image];
     const carouselId = `carousel-${orderId}-${itemIndex}`;
 
@@ -132,6 +165,19 @@ const ViewOrders = () => {
     );
   };
 
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'placed': return 'bg-info';
+      case 'shipped': return 'bg-primary';
+      case 'in_transit': return 'bg-warning';
+      case 'delivered': return 'bg-success';
+      case 'cancelled': return 'bg-danger';
+      case 'return_requested': return 'bg-secondary';
+      case 'returned': return 'bg-dark';
+      default: return 'bg-light text-dark';
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -164,7 +210,9 @@ const ViewOrders = () => {
           <div key={order._id} className="card mb-4">
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Order ID: {order._id}</h5>
-              <span className="badge bg-light text-dark">Status: {order.status}</span>
+              <span className={`badge ${getStatusBadgeColor(order.status)} text-white`}>
+                {order.status.replace(/_/g, ' ').toUpperCase()}
+              </span>
             </div>
             <div className="card-body">
               <div className="row mb-3">
@@ -178,29 +226,29 @@ const ViewOrders = () => {
                       className="btn btn-primary btn-sm"
                       onClick={() => handleViewDetails(order._id)}
                     >
-                      View Details
+                      <i className="bi bi-eye me-1"></i> View Details
                     </button>
                     <button
                       className="btn btn-info btn-sm"
-                      onClick={() => handleQuickAction(order._id, 'track')}
+                      onClick={() => handleTrackOrder(order._id)}
                     >
-                      Track
+                      <i className="bi bi-truck me-1"></i> Track Order
                     </button>
-                    {order.status === 'completed' && (
-                      <>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleQuickAction(order._id, 'cancelled')}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          className="btn btn-warning btn-sm"
-                          onClick={() => handleQuickAction(order._id, 'return_requested')}
-                        >
-                          Return
-                        </button>
-                      </>
+                    {order.can_cancel && (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleCancelOrder(order._id)}
+                      >
+                        <i className="bi bi-x-circle me-1"></i> Cancel
+                      </button>
+                    )}
+                    {order.can_return && (
+                      <button
+                        className="btn btn-warning btn-sm"
+                        onClick={() => handleReturnOrder(order._id)}
+                      >
+                        <i className="bi bi-arrow-return-left me-1"></i> Return
+                      </button>
                     )}
                   </div>
                 </div>

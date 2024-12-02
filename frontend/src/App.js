@@ -30,6 +30,7 @@ import EditProduct from './pages/editProduct';
 import ProductReview from './pages/ProductReview';
 import ManageProfile from './pages/manageProfile';
 import OrderDetails from './pages/OrderDetails';
+import TrackingDetails from './pages/TrackingDetails';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -138,6 +139,14 @@ function App() {
                   element={
                     <BuyerRoute>
                       <ManagePaymentMethods />
+                    </BuyerRoute>
+                  }
+                />
+                <Route
+                  path="/order/:orderId/tracking"
+                  element={
+                    <BuyerRoute>
+                      <TrackingDetails />
                     </BuyerRoute>
                   }
                 />
