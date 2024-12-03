@@ -17,6 +17,7 @@ class UpdatePaymentStatus(BaseModel):
     email: str
     buyed: bool
     payment_method: Optional[Dict] = None
+    shipping_address: Optional[Dict] = None
 
 class CartProduct(BaseModel):
     productId: str
