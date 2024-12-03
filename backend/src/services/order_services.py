@@ -5,7 +5,7 @@ from src.schemas.order_schema import OrderCreateSchema, OrderUpdateSchema
 from datetime import datetime, timedelta
 import logging
 from typing import List
-import asyncio
+from smtp import Smtp
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +24,95 @@ STATUS_DESCRIPTIONS = {
     "returned": "Product has been returned to seller",
 }
 
+EMAIL_TEMPLATES = {
+    "placed": {
+        "subject": "Order Confirmation",
+        "message": """
+Dear {customer_name},
+
+Thank you for your order! Your order (ID: {order_id}) has been successfully placed.
+
+Order Details:
+{order_details}
+
+Total Amount: ${total_amount:.2f}
+
+You can track your order status in the application.
+
+Best regards,
+Revive & Rewear Team
+"""
+    },
+    "cancelled": {
+        "subject": "Order Cancellation Confirmation",
+        "message": """
+Dear {customer_name},
+
+Your order (ID: {order_id}) has been successfully cancelled.
+
+Cancelled Items:
+{order_details}
+
+A refund of ${total_amount:.2f} will be processed according to your payment method.
+
+If you have any questions, please contact our support team.
+
+Best regards,
+Revive & Rewear Team
+"""
+    },
+    "returned": {
+        "subject": "Return Completed",
+        "message": """
+Dear {customer_name},
+
+Your return for order (ID: {order_id}) has been successfully processed.
+
+Returned Items:
+{order_details}
+
+Refund amount of ${total_amount:.2f} will be processed according to your payment method.
+
+Thank you for shopping with us!
+
+Best regards,
+Revive & Rewear Team
+"""
+    }
+}
+
+def format_order_details(order: OrderModel) -> str:
+    """Format order details for email content"""
+    details = []
+    for item in order.items:
+        details.append(f"- {item.product_name} (Quantity: {item.quantity}) - ${item.price:.2f} each")
+    return "\n".join(details)
+
+async def send_order_status_email(order: OrderModel, status: str):
+    """Send email notification based on order status"""
+    try:
+        if status not in EMAIL_TEMPLATES:
+            return
+
+        template = EMAIL_TEMPLATES[status]
+        customer_name = order.shipping_address.get('name', 'Valued Customer')
+        order_details = format_order_details(order)
+
+        message = template["message"].format(
+            customer_name=customer_name,
+            order_id=order.id,
+            order_details=order_details,
+            total_amount=order.total_amount
+        )
+
+        Smtp.trigger_email(
+            order.buyer_email,
+            template["subject"],
+            message
+        )
+        logger.info(f"Email sent successfully for order {order.id} - Status: {status}")
+    except Exception as e:
+        logger.error(f"Failed to send email for order {order.id}: {str(e)}")
 
 async def create_order(order_data: OrderCreateSchema) -> OrderModel:
     """Create a new order with initial tracking status"""
@@ -34,11 +123,25 @@ async def create_order(order_data: OrderCreateSchema) -> OrderModel:
             description=STATUS_DESCRIPTIONS["placed"],
         )
 
+        # Ensure shipping address contains all required fields
+        if not order_data.shipping_address or not all(key in order_data.shipping_address for key in ['name', 'address', 'postal_code']):
+            raise HTTPException(
+                status_code=400,
+                detail="Shipping address must include name, address, and postal code"
+            )
+
+        # Create structured shipping address
+        shipping_address = {
+            "name": order_data.shipping_address["name"],
+            "address": order_data.shipping_address["address"],
+            "postal_code": order_data.shipping_address["postal_code"]
+        }
+
         order = OrderModel(
             buyer_email=order_data.buyer_email,
             items=order_data.items,
             total_amount=order_data.total_amount,
-            shipping_address=order_data.shipping_address,
+            shipping_address=shipping_address,
             payment_method=order_data.payment_method,
             tracking_history=[initial_tracking],
             status="placed",
@@ -49,7 +152,9 @@ async def create_order(order_data: OrderCreateSchema) -> OrderModel:
         result = await orders.insert_one(order.dict(by_alias=True))
         if result.inserted_id:
             created_order = await orders.find_one({"_id": str(result.inserted_id)})
-            return OrderModel(**created_order)
+            order_model = OrderModel(**created_order)
+            await send_order_status_email(order_model, "placed")
+            return order_model
 
         raise HTTPException(status_code=500, detail="Failed to create order")
 
@@ -88,11 +193,11 @@ async def handle_return_status_updates(order: OrderModel) -> str:
         print("No return date found")
         return order.status
 
-    time_diff = (datetime.now() - return_date).total_seconds() / 60
+    time_diff = (datetime.now() - return_date).total_seconds()  # Convert to minutes
     print(f"Time difference in minutes: {time_diff}")
 
     # Return next status based on time difference, regardless of current status
-    if time_diff > 4:  # More than 4 minutes
+    if time_diff > 120:  # More than 4 minutes
         try:
             # Update product status when return is complete
             for item in order.items:
@@ -111,11 +216,11 @@ async def handle_return_status_updates(order: OrderModel) -> str:
         except Exception as e:
             print(f"Error updating product status: {e}")
             return order.status
-    elif time_diff > 3:  # Between 3-4 minutes
+    elif time_diff > 90:  # 90 seconds
         return "return_in_transit"
-    elif time_diff > 2:  # Between 2-3 minutes
+    elif time_diff > 60:  #  60seconds
         return "return_picked"
-    elif time_diff > 1:  # Between 1-2 minutes
+    elif time_diff > 30:  # 30 seconds
         return "return_pickup_scheduled"
     else:  # Less than 1 minute
         return "return_requested"
@@ -147,15 +252,27 @@ async def update_order_status(order_id: str, status: str) -> OrderModel:
                     },
                 )
             new_status = "cancelled"
+            await send_order_status_email(order, "cancelled")
 
-        # Check if we should auto-update based on time
-        elif order.status == "placed":
+        # Handle automatic status progression
+        elif order.status == "placed" or order.status == "shipped" or order.status == "in_transit":
             new_status = await update_order_status_based_on_time(order)
             print(f"Time-based status update: {new_status}")
+            
+            # When status changes to delivered, enable returns
+            if new_status == "delivered":
+                await orders.update_one(
+                    {"_id": order_id},
+                    {"$set": {"can_return": True}}
+                )
+
         # Handle initial return request
         elif status == "return_requested" and order.status == "delivered":
+            if not order.can_return:
+                raise HTTPException(status_code=400, detail="This order is not eligible for return")
             print("Handling initial return request")
             new_status = "return_requested"
+
         # Handle return flow updates
         elif order.status.startswith("return_"):
             print("Entering return flow")
@@ -174,15 +291,19 @@ async def update_order_status(order_id: str, status: str) -> OrderModel:
                 description=STATUS_DESCRIPTIONS.get(new_status, "Status updated"),
             )
 
-            # Update the STATUS_DESCRIPTIONS dict to include cancelled status
+            update_data = {
+                "status": new_status,
+                "can_cancel": False,  # Once status changes, can't cancel
+            }
+
+            # Don't disable returns if the order is delivered
+            if new_status != "delivered":
+                update_data["can_return"] = False
+
             result = await orders.update_one(
                 {"_id": order_id},
                 {
-                    "$set": {
-                        "status": new_status,
-                        "can_cancel": False,  # Once cancelled, can't cancel again
-                        "can_return": False,  # Cancelled orders can't be returned
-                    },
+                    "$set": update_data,
                     "$push": {"tracking_history": new_tracking.dict()},
                 },
             )

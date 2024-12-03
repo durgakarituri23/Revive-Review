@@ -236,11 +236,12 @@ async def update_payment_status(request: UpdatePaymentStatus):
         if request.buyed:
             # Get user address and payment method
             user = await users.find_one({"email": request.email})
-            shipping_address = {
+            shipping_address = request.shipping_address
+            """shipping_address = {
                 "name": f"{user['first_name']} {user['last_name']}",
                 "address": user.get("address", ""),
                 "postal_code": user.get("postal_code", ""),
-            }
+            }"""
 
             # Create order items from cart items
             order_items = [
