@@ -57,7 +57,7 @@ const Payments = () => {
     setSelectedMethodDetails(methodDetails || null);
   };
 
-  const handlePayment = async () => {
+  async function handlePayment() {
     if (!selectedPaymentMethod) {
       alert("Please select a payment method to proceed.");
       return;
@@ -80,11 +80,18 @@ const Payments = () => {
         )
       } : { type: 'cash' };
 
-      // Update payment status with payment method
+      const shippingAddress = {
+        name: userDetails.name,
+        address: userDetails.address,
+        postal_code: userDetails.postal_code
+      };
+
+      // Update payment status with payment method and shipping address
       const response = await axios.put(`http://localhost:8000/cart/payment-status`, {
         email: userEmail,
         buyed: true,
-        payment_method: paymentMethodDetails  // Make sure this is included
+        payment_method: paymentMethodDetails,
+        shipping_address: shippingAddress  
       });
 
       if (response.data.message) {
@@ -99,8 +106,7 @@ const Payments = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
+  }
 
 
   const handleInputChange = (e) => {
