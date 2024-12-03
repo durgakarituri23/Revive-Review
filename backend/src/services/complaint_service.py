@@ -5,8 +5,8 @@ from src.schemas.complaint import ComplaintCreate
 from fastapi import HTTPException, BackgroundTasks
 from typing import Optional
 from bson import ObjectId
-from smtp import Smtp  # Import your email sending logic
-
+from smtp import Smtp 
+from src.config.database import orders
 
 # Async wrapper for sending emails
 async def send_email_async(to_email, subject, body):
@@ -14,22 +14,44 @@ async def send_email_async(to_email, subject, body):
     with ThreadPoolExecutor() as pool:
         await loop.run_in_executor(pool, lambda: Smtp.trigger_email(to_email, subject, body))
 
-
 async def create_complaint(complaint_data: dict, background_tasks: BackgroundTasks):
     """
     Creates a complaint in the database and optionally sends email notifications to admins.
     """
     try:
         # Check if the issue type is 'Product Return' and an order ID is provided
-        if complaint_data["issue_type"] == "Product Return" and complaint_data.get("orderID"):
-            # Query the database to check for existing complaints with the same order ID and status 'In review'
+        if complaint_data["issue_type"] == "Product Return":
+            order_id = complaint_data.get("orderID")
+            if not order_id:
+                return {
+                    "success": False,
+                    "message": "Order ID is required for Product Return complaints."
+                }
+
+            # Verify if the order ID exists in the orders collection
+            order = await orders.find_one({"_id": order_id})
+            if not order:
+                return {
+                    "success": False,
+                    "message": f"No order exists with Order ID {order_id}. Please provide a valid Order ID."
+                }
+
+            # Check if the order status is 'delivered' or a valid return-related status
+            valid_statuses = ["delivered", "return_requested", "return_pickup_scheduled", "return_picked", "return_in_transit", "returned"]
+            if order["status"] not in valid_statuses:
+                return {
+                    "success": False,
+                    "message": f"The order status is '{order['status']}'. Complaints can only be raised for orders that are 'delivered' or in return-related statuses."
+                }
+
+            # Check for existing complaints with the same order ID and status 'In review'
             existing_complaint = await complaint_collection.find_one(
-                {"orderID": complaint_data["orderID"], "status": "In review"}
+                {"orderID": order_id, "status": "In review"}
             )
             if existing_complaint:
                 return {
                     "success": False,
-                    "message": f"A complaint for Order ID {complaint_data['orderID']} is already in review. Please wait for it to be resolved."
+                    "message": f"A complaint for Order ID {order_id} is already in review. Please wait for it to be resolved."
                 }
 
         # Add default fields
