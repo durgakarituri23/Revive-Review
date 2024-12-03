@@ -5,13 +5,21 @@ from fastapi import HTTPException, BackgroundTasks
 from bson import ObjectId
 
 from src.config.database import users
+from fastapi.responses import JSONResponse
 coupon_collection = database.Coupons
 
 async def create_coupon(coupon_data: dict, seller_id: str, background_tasks: BackgroundTasks):
     try:
         existing_coupon = await coupon_collection.find_one({"code": coupon_data["code"]})
         if existing_coupon:
-            raise HTTPException(status_code=400, detail="Coupon code already exists")
+            # raise HTTPException(status_code=400, detail="Coupon code already exists")
+            return JSONResponse(
+                status_code=400, 
+                content={
+                    "detail": "Coupon code already exists",
+                    "error": True
+                }
+            )
 
         coupon_doc = {
             **coupon_data,

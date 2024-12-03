@@ -35,12 +35,22 @@ const CouponManagement = () => {
         },
         body: JSON.stringify(formData)
       });
-
+  
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create coupon');
+        let errorMessage = 'Failed to create coupon';
+        try {
+          const errorData = await response.text();
+          // If it's a valid JSON, parse it
+          const parsedError = JSON.parse(errorData);
+          errorMessage = parsedError.detail || parsedError.message || errorMessage;
+        } catch (parseError) {
+          // If parsing fails, use the response status text
+          errorMessage = response.statusText || errorMessage;
+        }
+  
+        throw new Error(errorMessage);
       }
-
+  
       setMessage({ text: 'Coupon created successfully!', type: 'success' });
       
       setFormData({
