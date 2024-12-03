@@ -72,6 +72,9 @@ const Header = () => {
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/complaints">Complaints</Link>
                   </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/contactus">Contact US</Link>
+                  </li>
                 </>
               ) : user.role === 'seller' ? (
                 // Seller navigation
@@ -87,6 +90,9 @@ const Header = () => {
                   </li>
                   <li className="nav-item">
                     <Link className="nav-link text-white" to="/manage-products">Manage Products</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/contactus">Contact US</Link>
                   </li>
                 </>
               ) : user.role === 'admin' ? (
