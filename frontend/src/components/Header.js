@@ -92,6 +92,10 @@ const Header = () => {
                     <Link className="nav-link text-white" to="/manage-products">Manage Products</Link>
                   </li>
                   <li className="nav-item">
+                     <Link className="nav-link text-white" to="/manage-coupons">Create Coupons</Link>
+                  </li>
+                
+                  <li className="nav-item">
                     <Link className="nav-link text-white" to="/contactus">Contact US</Link>
                   </li>
                 </>

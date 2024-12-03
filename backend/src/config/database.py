@@ -11,4 +11,4 @@ payment_methods = database.PaymentDetails
 category = database.Categories
 orders = database.Orders
 complaint_collection = database.Complaints
-
+coupon_collection = database.Coupons

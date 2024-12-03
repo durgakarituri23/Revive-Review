@@ -13,11 +13,13 @@ class DeleteCartProduct(BaseModel):
 class CartResponse(BaseModel):
     message: str
 
+
 class UpdatePaymentStatus(BaseModel):
     email: str
     buyed: bool
     payment_method: Optional[Dict] = None
     shipping_address: Optional[Dict] = None
+    coupon_code: Optional[str] = None 
 
 class CartProduct(BaseModel):
     productId: str

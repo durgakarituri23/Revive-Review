@@ -1,5 +1,6 @@
 from fastapi import HTTPException
-from src.config.database import cart, product_collection, users
+from src.services.coupon_service import validate_coupon
+from src.config.database import cart, product_collection, users, coupon_collection
 from src.models.cart import Cart
 from src.schemas.cart_schema import UpdateCart, DeleteCartProduct, UpdatePaymentStatus
 from fastapi.encoders import jsonable_encoder
@@ -182,9 +183,7 @@ async def get_cart_total(email: str):
         logger.error(f"Error calculating cart total: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 async def update_payment_status(request: UpdatePaymentStatus):
-    """Update payment status for cart items and create order if payment successful"""
     try:
         await verify_buyer(request.email)
         logger.info(f"Updating payment status for user: {request.email}")
@@ -231,7 +230,21 @@ async def update_payment_status(request: UpdatePaymentStatus):
             raise HTTPException(
                 status_code=500, detail="Failed to update payment status"
             )
+        # Apply coupon if provided
+        applied_discount = 0
+        if request.coupon_code:
+            coupon = await validate_coupon(request.coupon_code)
+            if coupon:
+                applied_discount = (total_amount * coupon['discount_percentage']) / 100
+                total_amount -= applied_discount
+                print("Applied discount:", applied_discount)
+                # Update coupon usage
+                await coupon_collection.update_one(
+                    {"code": request.coupon_code},
+                    {"$inc": {"used_count": 1}}
+                )
 
+        # Create order with applied discount
         # If payment is successful, create order
         if request.buyed:
             # Get user address and payment method

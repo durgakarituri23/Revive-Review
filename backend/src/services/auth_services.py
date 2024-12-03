@@ -87,10 +87,29 @@ async def create_user(register: User):
     await users.insert_one(register_data)
 
     Smtp.trigger_email(
-        register.email,
-        "Welcome to Our Platform",
-        f"Hello {register.first_name},\n\nThank you for registering. We are excited to have you on board!",
-    )
+    register.email,
+    "Welcome to Revive & Rewear – Happy Shopping!",
+    f"""
+    Hi {register.first_name},
+
+    Welcome to Revive & Rewear!
+
+    We're thrilled to have you in our community of sustainable fashion lovers. Here, you can discover unique preloved fashion pieces at great prices while making an eco-friendly impact.
+
+    **Here’s how to get started:**
+    - Explore our catalog of preloved clothing and accessories.
+    - Enjoy a seamless shopping experience with secure payment options.
+
+    If you need assistance, we’re here for you. Use contact form to reach out to our friendly team.
+    Thank you for making sustainable choices!
+
+    Warm regards,  
+    The Revive & Rewear Team  
+    "Where Style Meets Sustainability"  
+    """
+)
+
+
 
     response_data = {
         "first_name": register.first_name,
@@ -178,10 +197,27 @@ async def create_seller(register):
     await users.insert_one(register_data)
 
     Smtp.trigger_email(
-        register.email,
-        "Welcome to Our Platform",
-        f"Hello {register.first_name},\n\nThank you for registering as a seller. We are excited to have you on board!",
-    )
+    register.email,
+    "Welcome to Revive & Rewear – Let’s Get Selling!",
+    f"""
+    Hi {register.first_name},
+
+    Welcome to Revive & Rewear!
+
+    We're so excited to have you as part of our community of sellers. By listing your preloved items, you’re giving them a second life and contributing to a more sustainable fashion world.
+
+    **How to get started as a seller:**
+    - Upload your first listing: Add photos, details, and set a fair price.  
+    - Ship with ease: Follow our simple shipping guidelines to send your items to happy buyers.
+
+    Thank you for joining us in this movement toward sustainable fashion!
+
+    Warm regards,  
+    The Revive & Rewear Team  
+    "Where Style Meets Sustainability"  
+    """
+)
+
 
     response_data = {
         "first_name": register.first_name,
@@ -346,10 +382,28 @@ async def create_first_admin(register: RegisterModel):
     register_data["role"] = "admin"
     await users.insert_one(register_data)
     Smtp.trigger_email(
-        register.email,
-        "Welcome to Our Platform",
-        f"Hello {register.first_name},\n\nThank you for registering as a Admin. We are excited to have you on board!",
-    )
+    register.email,
+    "Welcome to Revive & Rewear – Admin Access Granted!",
+    f"""
+    Hi {register.first_name},
+
+    Congratulations on becoming an admin at Revive & Rewear!  
+
+    As part of the admin team, you play a key role in ensuring our platform operates smoothly and continues to provide a delightful experience for our buyers and sellers.  
+
+    **Here’s what you can do as an admin:**  
+    - Monitor and manage user activities to maintain a safe and friendly community.  
+    - Approve and review item listings.  
+    - Handle disputes, assist users, and provide excellent support.  
+    
+    Welcome aboard, and thank you for helping us build a sustainable fashion future!  
+
+    Best regards,  
+    The Revive & Rewear Team  
+    "Where Style Meets Sustainability"  
+    """
+)
+
     return UserResponseModel(
         first_name=register.first_name,
         last_name=register.last_name,

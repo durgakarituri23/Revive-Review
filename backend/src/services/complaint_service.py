@@ -161,14 +161,14 @@ async def close_complaint(complaint_id: str, resolution: str, background_tasks: 
 
             # Prepare email content
             email_content = f"""
-            Dear {complaint['firstname']} {complaint['lastname']},
+Dear {complaint['firstname']} {complaint['lastname']},
 
-            Your complaint has been resolved.
+Your complaint has been resolved.
 
-            Complaint ID: {complaint_id}
-            Issue Type: {complaint['issue_type']}
-            Description: {complaint['details']}
-            """
+Complaint ID: {complaint_id}
+Issue Type: {complaint['issue_type']}
+Description: {complaint['details']}
+"""
 
             # Add Order ID only if the issue type is "Product Return"
             if complaint.get("issue_type") == "Product Return":

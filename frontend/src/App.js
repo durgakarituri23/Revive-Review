@@ -36,7 +36,7 @@ import RaiseComplaint from './pages/RaiseComplaint';
 import ReviewComplaints from './pages/ReviewComplaints';
 import ComplaintDetails from './pages/ComplaintDetails';
 import ContactUs from './pages/ContactUs';
-
+import CouponManagement from './pages/CouponManagement';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -95,6 +95,14 @@ function App() {
                       <EditProduct />
                     </SellerRoute>
                   }
+                />
+                <Route 
+                    path="/manage-coupons" 
+                    element={
+                           <SellerRoute>
+                              <CouponManagement />
+                            </SellerRoute>
+                  } 
                 />
 
 
