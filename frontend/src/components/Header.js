@@ -106,6 +106,11 @@ const Header = () => {
                       Manage Categories
                     </Link>
                   </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" to="/review-complaints">
+                      Review Complaints
+                    </Link>
+                  </li>
                 </>
               ) : null}
 

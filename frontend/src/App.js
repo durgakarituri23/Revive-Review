@@ -33,6 +33,8 @@ import OrderDetails from './pages/OrderDetails';
 import TrackingDetails from './pages/TrackingDetails';
 import ComplaintsPage from './pages/ComplaintsPage';
 import RaiseComplaint from './pages/RaiseComplaint';
+import ReviewComplaints from './pages/ReviewComplaints';
+import ComplaintDetails from './pages/ComplaintDetails';
 
 // Role-specific home component wrapper
 const RoleBasedHome = () => {
@@ -118,7 +120,22 @@ function App() {
                     </AdminRoute>
                   }
                 />
-
+                <Route
+                  path="/review-complaints"
+                  element={
+                    <AdminRoute>
+                      <ReviewComplaints />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/complaint/:complaintId"
+                  element={
+                    <AdminRoute>
+                      <ComplaintDetails />
+                    </AdminRoute>
+                  }
+                />
                 {/* Buyer Only Routes */}
                 <Route
                   path="/cart"

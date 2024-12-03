@@ -1,10 +1,11 @@
+
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from src.config.database import complaint_collection
 from src.schemas.complaint import ComplaintCreate, ComplaintResponse, ComplaintCloseRequest
 from typing import List
 from bson import ObjectId
 from typing import Optional
-from src.services.complaint_service import (create_complaint, fetch_complaints_by_status)
+from src.services.complaint_service import (create_complaint, fetch_complaints_by_status, close_complaint)
 
 router = APIRouter()
 
@@ -55,6 +56,8 @@ async def get_complaint(complaint_id: str):
         complaint = await complaint_collection.find_one({"_id": ObjectId(complaint_id)})
         if not complaint:
             raise HTTPException(status_code=404, detail="Complaint not found.")
+        
+        print("Complaint fetched from database:", complaint)  # Debug log
         complaint["id"] = str(complaint["_id"])
         complaint.pop("_id")
         return complaint
@@ -71,7 +74,29 @@ async def fetch_complaints_status(
     Fetch complaints by status. Admin can view all; buyers can view their own.
     """
     try:
+        print(f"Fetching complaints with status: {status} for role: {user_role}")
         complaints = await fetch_complaints_by_status(status, user_role, email)
+        print(f"Complaints returned: {complaints}")
         return complaints
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.patch("/{complaint_id}/close", status_code=200)
+async def close_complaint_route(
+    complaint_id: str,
+    request: ComplaintCloseRequest,  # Validate resolution field using the schema
+    background_tasks: BackgroundTasks,
+    user_role: str = "admin"
+):
+    """
+    Close a complaint by updating its status to 'Closed' and adding a resolution message.
+    """
+    try:
+        if user_role != "admin":
+            raise HTTPException(status_code=403, detail="Only admins can close complaints.")
+        
+        # Call the service function to close the complaint
+        response = await close_complaint(complaint_id, request.resolution, background_tasks)
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
