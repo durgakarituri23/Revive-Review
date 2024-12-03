@@ -70,7 +70,7 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotResetPassword />} />
                 <Route path="/seller-register" element={<SellerRegister />} />
                 <Route path="/admin-register" element={<AdminRegister />} />
-
+                <Route path="/contactus" element={<ContactUs />} />
                 {/* Seller Only Routes */}
                 <Route
                   path="/uploadProducts"
@@ -96,14 +96,7 @@ function App() {
                     </SellerRoute>
                   }
                 />
-                <Route
-                  path="/contactus"
-                  element={
-                    <SellerRoute>
-                      <ContactUs />
-                    </SellerRoute>
-                  }
-                />
+
 
                 {/* Admin Only Routes */}
                 <Route
@@ -216,14 +209,6 @@ function App() {
 	                element={
 	                  <BuyerRoute>
 	                    <RaiseComplaint />
-	                  </BuyerRoute>
-	                }
-	              />
-                <Route
-	                path="/contactus"
-	                element={
-	                  <BuyerRoute>
-	                    <ContactUs />
 	                  </BuyerRoute>
 	                }
 	              />

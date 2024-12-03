@@ -40,7 +40,6 @@ export const SellerRoute = ({ children }) => {
 export const BuyerRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
-
     if (loading) {
         return <div>Loading...</div>; // Or your loading component
     }

@@ -56,8 +56,6 @@ async def get_complaint(complaint_id: str):
         complaint = await complaint_collection.find_one({"_id": ObjectId(complaint_id)})
         if not complaint:
             raise HTTPException(status_code=404, detail="Complaint not found.")
-        
-        print("Complaint fetched from database:", complaint)  # Debug log
         complaint["id"] = str(complaint["_id"])
         complaint.pop("_id")
         return complaint
@@ -74,9 +72,7 @@ async def fetch_complaints_status(
     Fetch complaints by status. Admin can view all; buyers can view their own.
     """
     try:
-        print(f"Fetching complaints with status: {status} for role: {user_role}")
         complaints = await fetch_complaints_by_status(status, user_role, email)
-        print(f"Complaints returned: {complaints}")
         return complaints
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

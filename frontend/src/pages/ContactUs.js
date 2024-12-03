@@ -1,24 +1,40 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
 const ContactUs = () => {
-  const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const { user } = useAuth(); // Assuming AuthContext is being used
+  const [details, setDetails] = useState("");
   const [message, setMessage] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
-  const handleQueryChange = (e) => {
-    setQuery(e.target.value);
-    setMessage(""); // Clear message when user starts typing
+  useEffect(() => {
+    // Check if the user role is not admin; otherwise, block access
+    if (user?.role === "admin") {
+      setIsAuthorized(false);
+    }
+  }, [user]);
+
+  const handleDetailsChange = (e) => {
+    setDetails(e.target.value);
+    setMessage(""); // Clear the message when the user types
   };
 
   const submitQuery = async (event) => {
-    event.preventDefault();
+    event.preventDefault(); // Prevent default form behavior
 
-    // Validate query input
-    if (query.trim().length < 5) {
-      setMessage("Query must be at least 5 characters long.");
+    if (details.trim().length < 5) {
+      setMessage("Details must be at least 5 characters long.");
       return;
     }
+
+    const payload = {
+      firstname: user.first_name,
+      lastname: user.last_name,
+      mobilenumber: user.phone,
+      email: user.email,
+      details,
+    };
 
     try {
       const response = await fetch("http://127.0.0.1:8000/contact_us", {
@@ -26,14 +42,17 @@ const ContactUs = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       if (result.success) {
         setMessage("Your inquiry has been submitted successfully.");
-        setTimeout(() => navigate("/"), 3000); // Redirect after success
+        setDetails(""); // Clear the details field
+
+        // Clear the message after 2 seconds
+        setTimeout(() => setMessage(""), 2000);
       } else {
         setMessage(result.message || "Failed to submit your inquiry. Please try again.");
       }
@@ -43,6 +62,11 @@ const ContactUs = () => {
     }
   };
 
+  // Redirect unauthorized users (admins) to the home page
+  if (!isAuthorized) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="container mt-4">
       <h1 className="mb-4">
@@ -50,16 +74,17 @@ const ContactUs = () => {
       </h1>
       <form onSubmit={submitQuery} className="mt-4">
         <div className="mb-4">
-          <label htmlFor="query" className="form-label">
+          <label htmlFor="details" className="form-label">
             <i className="bi bi-question-circle me-2"></i>Your Query:
           </label>
           <textarea
-            id="query"
+            id="details"
             className="form-control"
             rows="5"
-            value={query}
-            onChange={handleQueryChange}
+            value={details}
+            onChange={handleDetailsChange}
             placeholder="Enter your query or concern here..."
+            required
           ></textarea>
         </div>
 

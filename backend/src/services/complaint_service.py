@@ -121,16 +121,9 @@ async def fetch_complaints_by_status(status: str, user_role: str = "admin", emai
     try:
         # Construct query based on role
         query = {"status": status}
-        print(status)
-
-        # Log the query for debugging
-        print(f"Executing query: {query}")
 
         # Fetch complaints from the database
         complaints = await complaint_collection.find(query).to_list(100)
-        
-        # Log the fetched data
-        print(f"Fetched complaints: {complaints}")
 
         # Transform complaints to response format
         return [
