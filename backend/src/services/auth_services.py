@@ -494,26 +494,73 @@ async def bulk_update_users(user_ids: list, update_data: dict):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# In auth_services.py
+
 async def get_user_stats():
     """Get statistics about users (admin only)"""
-    stats = {
-        "total_users": await users.count_documents({}),
-        "buyers": await users.count_documents({"role": "buyer"}),
-        "sellers": await users.count_documents({"role": "seller"}),
-        "admins": await users.count_documents({"role": "admin"}),
-    }
-    return stats
-
+    try:
+        stats = {
+            "total_users": await users.count_documents({}),
+            "buyers": await users.count_documents({"role": "buyer"}),
+            "sellers": await users.count_documents({"role": "seller"}),
+            "admins": await users.count_documents({"role": "admin"})
+        }
+        return stats
+    except Exception as e:
+        print(f"Error getting user stats: {e}")
+        return {
+            "total_users": 0,
+            "buyers": 0,
+            "sellers": 0,
+            "admins": 0
+        }
 
 async def search_users(query: str):
     """Search users by name or email"""
-    search_results = await users.find(
-        {
-            "$or": [
-                {"first_name": {"$regex": query, "$options": "i"}},
-                {"last_name": {"$regex": query, "$options": "i"}},
-                {"email": {"$regex": query, "$options": "i"}},
-            ]
+    try:
+        cursor = users.find(
+            {
+                "$or": [
+                    {"first_name": {"$regex": query, "$options": "i"}},
+                    {"last_name": {"$regex": query, "$options": "i"}},
+                    {"email": {"$regex": query, "$options": "i"}},
+                ]
+            }
+        )
+        users_list = await cursor.to_list(length=10)  # Limit to 10 recent users
+        
+        # Convert ObjectId to string and format the response
+        formatted_users = []
+        for user in users_list:
+            formatted_user = {
+                "id": str(user.get("_id")),
+                "first_name": user.get("first_name"),
+                "last_name": user.get("last_name"),
+                "email": user.get("email"),
+                "role": user.get("role")
+            }
+            formatted_users.append(formatted_user)
+            
+        return formatted_users
+    except Exception as e:
+        print(f"Error searching users: {e}")
+        return []
+
+async def get_admin_dashboard():
+    """Get admin dashboard data"""
+    try:
+        return {
+            "user_stats": await get_user_stats(),
+            "recent_users": await search_users("")
         }
-    ).to_list(None)
-    return jsonable_encoder(search_results)
+    except Exception as e:
+        print(f"Error getting admin dashboard: {e}")
+        return {
+            "user_stats": {
+                "total_users": 0,
+                "buyers": 0,
+                "sellers": 0,
+                "admins": 0
+            },
+            "recent_users": []
+        }
