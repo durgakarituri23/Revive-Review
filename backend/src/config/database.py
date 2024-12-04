@@ -12,3 +12,4 @@ category = database.Categories
 orders = database.Orders
 complaint_collection = database.Complaints
 coupon_collection = database.Coupons
+reviews_collection = database.Reviews
