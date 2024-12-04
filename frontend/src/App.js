@@ -118,7 +118,14 @@ function App() {
                     </SellerRoute>
                   }
                 />
-
+                <Route 
+                   path="/seller-dashboard" 
+                   element={
+                  <SellerRoute>
+                  <SellerHome />
+                  </SellerRoute>
+                } 
+                />
                 {/* Admin Only Routes */}
                 <Route
                   path="/unapproved-products"
