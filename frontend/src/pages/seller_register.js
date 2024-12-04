@@ -13,7 +13,8 @@ const SellerRegister = () => {
     address: '',
     taxId: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    mfa_enabled: false
   });
 
   const [errors, setErrors] = useState({});
@@ -61,8 +62,6 @@ const SellerRegister = () => {
       case 'address':
         return value.length < 10
           ? 'Please enter a complete address (at least 10 characters)'
-          : !/^[A-Za-z0-9\s\-,.'#]+$/.test(value)
-          ? 'Address contains invalid characters'
           : '';
 
       case 'taxId':
@@ -90,10 +89,9 @@ const SellerRegister = () => {
     }
   };
 
-  // Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
     // Special handling for phone numbers
     if (name === 'phone') {
       const numericValue = value.replace(/\D/g, '').slice(0, 10);
@@ -109,19 +107,19 @@ const SellerRegister = () => {
     }
     
     // Validate field on change
-    setErrors(prev => ({
-      ...prev,
-      [name]: validateField(name, name === 'phone' ? value.replace(/\D/g, '') : value)
-    }));
-
-    // Special case for confirm password
-    if (name === 'password') {
       setErrors(prev => ({
         ...prev,
-        confirmPassword: formData.confirmPassword 
-          ? validateField('confirmPassword', formData.confirmPassword)
-          : prev.confirmPassword
+      [name]: validateField(name, name === 'phone' ? value.replace(/\D/g, '') : value)
       }));
+
+    // Special case for confirm password
+      if (name === 'password') {
+        setErrors(prev => ({
+          ...prev,
+          confirmPassword: formData.confirmPassword 
+            ? validateField('confirmPassword', formData.confirmPassword)
+            : prev.confirmPassword
+        }));
     }
   };
 
@@ -129,8 +127,10 @@ const SellerRegister = () => {
   const validateForm = () => {
     const newErrors = {};
     Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
+      if (key !== 'mfa_enabled') {
+        const error = validateField(key, formData[key]);
+        if (error) newErrors[key] = error;
+      }
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -154,7 +154,8 @@ const SellerRegister = () => {
         password: formData.password,
         business_name: formData.businessName,
         address: formData.address,
-        tax_id: formData.taxId
+        tax_id: formData.taxId,
+        mfa_enabled: formData.mfa_enabled
       });
 
       if (response.status === 200 || response.status === 201) {
@@ -350,6 +351,25 @@ const SellerRegister = () => {
                   <div className="invalid-feedback">{errors.confirmPassword}</div>
                 )}
               </div>
+              <div className="mb-3">
+        <div className="form-check">
+          <input
+            type="checkbox"
+            className="form-check-input"
+            id="mfa_enabled"
+            name="mfa_enabled"
+            checked={formData.mfa_enabled}
+            onChange={handleChange}
+            disabled={isLoading}
+          />
+          <label className="form-check-label" htmlFor="mfa_enabled">
+            Enable Two-Factor Authentication
+          </label>
+          <small className="form-text text-muted d-block">
+            When enabled, you'll need to verify your identity using a code sent to your email each time you log in.
+          </small>
+        </div>
+      </div>
 
               {errors.submit && (
                 <div className="alert alert-danger" role="alert">

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
+from src.services.mfa_service import mfa_service
+from src.services.auth_services import verify_mfa_code
 from src.schemas.user_schema import (
     UserResponseModel,
     RegisterModel,
@@ -11,6 +13,8 @@ from src.schemas.user_schema import (
     RegisterSeller,
     UserDetails,
     UpdateUserDetails,
+    MFAVerifyRequest,
+    ResendMFACodeRequest
 )
 from src.services.auth_services import (
     create_user,
@@ -39,6 +43,19 @@ from src.config.auth_middleware import (
 
 router = APIRouter()
 
+@router.post("/login", response_model=LoginResponse)
+async def check_login(login: LoginModel):
+    return await validate_login(login)
+
+@router.post("/verify-mfa", response_model=LoginResponse)
+async def verify_mfa(data: MFAVerifyRequest):
+    return await verify_mfa_code(data.email, data.code)
+
+@router.post("/resend-mfa-code")
+async def resend_verification_code(request: ResendMFACodeRequest):
+    if await mfa_service.send_verification_code(request.email):
+        return {"message": "Verification code sent successfully"}
+    raise HTTPException(status_code=500, detail="Failed to send code")
 
 # Public routes (no authentication required)
 @router.post("/register", response_model=UserResponseModel)

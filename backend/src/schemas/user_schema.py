@@ -10,6 +10,7 @@ class RegisterModel(BaseModel):
     password: str
     role: Optional[Literal["buyer", "seller", "admin"]] = "buyer"
     admin_code: Optional[str] = None
+    mfa_enabled: bool
 
 class RegisterSeller(BaseModel):
     first_name: str
@@ -20,6 +21,7 @@ class RegisterSeller(BaseModel):
     business_name: str
     address: str
     tax_id: str
+    mfa_enabled: bool
 
 class UserResponseModel(BaseModel):
     first_name: str
@@ -31,6 +33,7 @@ class UserResponseModel(BaseModel):
     tax_id: Optional[str] = None
     address: Optional[str] = None
     postal_code: Optional[str] = None
+    mfa_enabled: bool
 
 class LoginModel(BaseModel):
     email: EmailStr
@@ -41,7 +44,15 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str
     role: str
+    requires_mfa: bool = False
+    message: Optional[str] = None
 
+# Add MFA verification schema
+class MFAVerifyRequest(BaseModel):
+    email: EmailStr
+    code: str
+class ResendMFACodeRequest(BaseModel):
+    email: EmailStr
 class PasswordReset(BaseModel):
     email: EmailStr
 

@@ -18,7 +18,8 @@ from fastapi.security import OAuth2PasswordBearer
 from bson import ObjectId
 import os
 from dotenv import load_dotenv
-
+from src.services.mfa_service import mfa_service
+from src.schemas.user_schema import LoginResponse
 load_dotenv()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 ADMIN_CODE = os.getenv("ADMIN_REGISTRATION_CODE")
@@ -117,6 +118,7 @@ async def create_user(register: User):
         "phone": register.phone,
         "email": register.email,
         "role": "buyer",
+        "mfa_enabled": False
     }
 
     return UserResponseModel(**response_data)
@@ -130,26 +132,69 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
+
+
 async def validate_login(login):
     user = await users.find_one({"email": login.email})
 
     if not user or user["password"] != login.password:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    # Generate access token with role
+    # Check if MFA is enabled
+    if await mfa_service.is_mfa_enabled(login.email):
+        # Send verification code
+        if not await mfa_service.send_verification_code(login.email):
+            raise HTTPException(
+                status_code=500, 
+                detail="Failed to send verification code"
+            )
+        
+        # Return response indicating MFA is required
+        return LoginResponse(
+            email=login.email,
+            requires_mfa=True,
+            message="Verification code sent to your email",
+            access_token="",  # Empty string for optional fields
+            token_type="",
+            role=user["role"]
+        )
+
+    # If MFA not enabled, proceed with normal login
     token_data = {"sub": user["email"], "role": user["role"]}
     access_token = create_access_token(token_data)
 
-    response_data = {
-        "email": login.email,
-        "password": login.password,
-        "access_token": access_token,
-        "token_type": "bearer",
-        "role": user["role"],
-    }
+    return LoginResponse(
+        email=login.email,
+        requires_mfa=False,
+        access_token=access_token,
+        token_type="bearer",
+        role=user["role"]
+    )
 
-    return response_data
+async def verify_mfa_code(email: str, code: str):
+    """Verify MFA code and complete login"""
+    try:
+        # Verify the code
+        if await mfa_service.verify_code(email, code):
+            user = await users.find_one({"email": email})
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
 
+            # Generate token after successful verification
+            token_data = {"sub": user["email"], "role": user["role"]}
+            access_token = create_access_token(token_data)
+
+            return LoginResponse(
+                email=email,
+                requires_mfa=False,
+                access_token=access_token,
+                token_type="bearer",
+                role=user["role"]
+            )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def generate_auth_code(password):
     user = await users.find_one({"email": password.email})
@@ -225,6 +270,7 @@ async def create_seller(register):
         "phone": register.phone,
         "email": register.email,
         "role": "seller",
+         "mfa_enabled": False
     }
 
     return UserResponseModel(**response_data)
@@ -410,6 +456,7 @@ async def create_first_admin(register: RegisterModel):
         phone=register.phone,
         email=register.email,
         role="admin",
+        mfa_enabled=register.mfa_enabled,
     )
 
 

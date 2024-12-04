@@ -10,7 +10,8 @@ const Register = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    mfaEnabled: false 
   });
 
   const [errors, setErrors] = useState({});
@@ -117,7 +118,8 @@ const Register = () => {
         last_name: formData.lastName,
         phone: formData.phone,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        mfa_enabled: formData.mfaEnabled
       });
 
       if (response.status === 200 || response.status === 201) {
@@ -262,7 +264,25 @@ const Register = () => {
                   <div className="invalid-feedback">{errors.confirmPassword}</div>
                 )}
               </div>
-
+              <div className="mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="mfaEnabled"
+                    name="mfaEnabled"
+                    checked={formData.mfaEnabled}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                  <label className="form-check-label" htmlFor="mfaEnabled">
+                    Enable Two-Factor Authentication
+                  </label>
+                  <small className="form-text text-muted d-block">
+                    When enabled, you'll need to verify your identity using a code sent to your email each time you log in.
+                  </small>
+                </div>
+              </div>
               {errors.submit && (
                 <div className="alert alert-danger" role="alert">
                   {errors.submit}

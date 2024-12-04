@@ -12,7 +12,7 @@ class User(BaseModel):
     postal_code: Optional[str] = None
     business_name: Optional[str] = None  # For sellers
     tax_id: Optional[str] = None  # For sellers
-    
+    mfa_enabled: bool = False  
 
 class CardPayment(BaseModel):
     type: str = "card"
