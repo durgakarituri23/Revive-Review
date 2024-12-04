@@ -152,168 +152,181 @@ const Register = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <h2 className="text-center mb-4">Register</h2>
-          {success ? (
-            <div className="alert alert-success text-center" role="alert">
-              Registration successful! Redirecting to login page...
-            </div>
-          ) : (
-            <form onSubmit={handleRegister} noValidate>
-              <div className="mb-3">
-                <label htmlFor="firstName" className="form-label">First Name</label>
-                <input
-                  type="text"
-                  className={getInputClassName('firstName')}
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.firstName && (
-                  <div className="invalid-feedback">{errors.firstName}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="lastName" className="form-label">Last Name</label>
-                <input
-                  type="text"
-                  className={getInputClassName('lastName')}
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.lastName && (
-                  <div className="invalid-feedback">{errors.lastName}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="email" className="form-label">Email</label>
-                <input
-                  type="email"
-                  className={getInputClassName('email')}
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.email && (
-                  <div className="invalid-feedback">{errors.email}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="phone" className="form-label">Phone</label>
-                <input
-                  type="tel"
-                  className={getInputClassName('phone')}
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  maxLength="10"
-                  required
-                  disabled={isLoading}
-                />
-                {errors.phone && (
-                  <div className="invalid-feedback">{errors.phone}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="password" className="form-label">Password</label>
-                <input
-                  type="password"
-                  className={getInputClassName('password')}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.password && (
-                  <div className="invalid-feedback">{errors.password}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-                <input
-                  type="password"
-                  className={getInputClassName('confirmPassword')}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.confirmPassword && (
-                  <div className="invalid-feedback">{errors.confirmPassword}</div>
-                )}
-              </div>
-              <div className="mb-3">
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="mfaEnabled"
-                    name="mfaEnabled"
-                    checked={formData.mfaEnabled}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                  />
-                  <label className="form-check-label" htmlFor="mfaEnabled">
-                    Enable Two-Factor Authentication
-                  </label>
-                  <small className="form-text text-muted d-block">
-                    When enabled, you'll need to verify your identity using a code sent to your email each time you log in.
-                  </small>
-                </div>
-              </div>
-              {errors.submit && (
-                <div className="alert alert-danger" role="alert">
-                  {errors.submit}
-                </div>
-              )}
-
-              <button 
-                type="submit" 
-                className="btn btn-primary w-100 mb-3" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Registering...
-                  </>
-                ) : 'Register'}
-              </button>
+<div style={{ backgroundColor: '#f8f9fa', padding: '2rem 0' }}>
+      <div className="container">
+        <div className="row">
+          {/* Left Side - Buyer Information */}
+          <div className="col-lg-5 mb-4 mb-lg-0">
+            <div className="pe-lg-4">
+              <h2 className="display-6 mb-4" style={{ color: '#0d6efd' }}>Join Our Sustainable Fashion Community</h2>
               
-              <div className="text-center">
-                Already have an account? {' '}
-                <button 
-                  onClick={() => navigate('/login')} 
-                  className="btn btn-link p-0"
-                  type="button"
-                >
-                  Login here
-                </button>
+              <div className="card shadow-sm border-0 mb-4">
+                <div className="card-body">
+                  <h5 className="card-title" style={{ color: '#198754' }}>Why Choose Us</h5>
+                  <ul className="list-unstyled">
+                    <li className="mb-2">👗 Curated pre-loved fashion</li>
+                    <li className="mb-2">💰 Great value for quality items</li>
+                    <li className="mb-2">🌍 Reduce fashion waste impact</li>
+                  </ul>
+                </div>
               </div>
-            </form>
-          )}
+
+             
+            </div>
+          </div>
+
+          {/* Right Side - Registration Form */}
+          <div className="col-lg-7">
+            <div className="card shadow border-0 p-4">
+              <h2 className="text-center mb-4" style={{ color: '#0d6efd' }}>Create Your Account</h2>
+              {success ? (
+                <div className="alert alert-success text-center">
+                  Registration successful! Redirecting to login page...
+                </div>
+              ) : (
+                <form onSubmit={handleRegister} noValidate>
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label">First Name</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.firstName ? 'is-invalid' : formData.firstName ? 'is-valid' : ''}`}
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder="Enter first name"
+                      />
+                      {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label">Last Name</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.lastName ? 'is-invalid' : formData.lastName ? 'is-valid' : ''}`}
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder="Enter last name"
+                      />
+                      {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        className={`form-control ${errors.email ? 'is-invalid' : formData.email ? 'is-valid' : ''}`}
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder="Enter email"
+                      />
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label">Phone</label>
+                      <input
+                        type="tel"
+                        className={`form-control ${errors.phone ? 'is-invalid' : formData.phone ? 'is-valid' : ''}`}
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        maxLength="10"
+                        disabled={isLoading}
+                        placeholder="Enter phone number"
+                      />
+                      {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label">Password</label>
+                      <input
+                        type="password"
+                        className={`form-control ${errors.password ? 'is-invalid' : formData.password ? 'is-valid' : ''}`}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder="Enter password"
+                      />
+                      {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label">Confirm Password</label>
+                      <input
+                        type="password"
+                        className={`form-control ${errors.confirmPassword ? 'is-invalid' : formData.confirmPassword ? 'is-valid' : ''}`}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder="Confirm your password"
+                      />
+                      {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+                    </div>
+
+                    <div className="col-12">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="mfaEnabled"
+                          name="mfaEnabled"
+                          checked={formData.mfaEnabled}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                        />
+                        <label className="form-check-label" htmlFor="mfaEnabled">
+                          Enable Two-Factor Authentication
+                        </label>
+                        <small className="form-text text-muted d-block">
+                          When enabled, you'll need to verify your identity using a code sent to your email each time you log in.
+                        </small>
+                      </div>
+                    </div>
+
+                    {errors.submit && (
+                      <div className="col-12">
+                        <div className="alert alert-danger">{errors.submit}</div>
+                      </div>
+                    )}
+
+                    <div className="col-12">
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary w-100"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" />
+                            Registering...
+                          </>
+                        ) : 'Create Account'}
+                      </button>
+                    </div>
+
+                    <div className="col-12 text-center">
+                      Already have an account?{' '}
+                      <button 
+                        type="button"
+                        className="btn btn-link p-0"
+                        onClick={() => navigate('/login')}
+                      >
+                        Login here
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
