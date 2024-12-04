@@ -10,67 +10,43 @@ const ViewOrders = () => {
   const navigate = useNavigate();
 
   const carouselStyle = {
-    height: '200px',
-    overflow: 'hidden',
-    backgroundColor: '#f8f9fa',
-    position: 'relative'
+    height: "200px",
+    overflow: "hidden",
+    backgroundColor: "#f8f9fa",
+    position: "relative",
   };
 
   const imageStyle = {
-    width: '100%',
-    height: '200px',
-    objectFit: 'contain',
-    backgroundColor: '#f8f9fa'
+    width: "100%",
+    height: "200px",
+    objectFit: "contain",
+    backgroundColor: "#f8f9fa",
   };
 
   useEffect(() => {
     const fetchOrders = async () => {
       if (!userEmail) {
-        setError('User email not found. Please log in.');
+        setError("User email not found. Please log in.");
         setLoading(false);
         return;
       }
 
       try {
-        const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
+        const response = await axios.get(
+          `http://localhost:8000/orders/user?email=${userEmail}`
+        );
+
         setOrders(response.data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching orders:', error);
-        setError('Failed to fetch orders. Please try again later.');
+        console.error("Error fetching orders:", error);
+        setError("Failed to fetch orders. Please try again later.");
         setLoading(false);
       }
     };
 
     fetchOrders();
-
-    // Set up polling for active orders
-    const interval = setInterval(() => {
-      if (orders.some(order => !['delivered', 'cancelled', 'returned'].includes(order.status))) {
-        fetchOrders();
-      }
-    }, 30000); // Poll every 30 seconds
-
-    return () => clearInterval(interval);
   }, [userEmail]);
-
-  useEffect(() => {
-    if (!loading && orders.length > 0) {
-      const initCarousels = () => {
-        const carousels = document.querySelectorAll('.carousel');
-        carousels.forEach(carousel => {
-          if (!window.bootstrap.Carousel.getInstance(carousel)) {
-            new window.bootstrap.Carousel(carousel, {
-              interval: false,
-              touch: true
-            });
-          }
-        });
-      };
-
-      initCarousels();
-    }
-  }, [loading, orders]);
 
   const handleViewDetails = (orderId) => {
     navigate(`/order/${orderId}`);
@@ -81,49 +57,28 @@ const ViewOrders = () => {
   };
 
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) {
+    if (!window.confirm("Are you sure you want to cancel this order?")) {
       return;
     }
 
     try {
       await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
-        status: 'cancelled'
+        status: "cancelled",
       });
 
-      const response = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
+      const response = await axios.get(
+        `http://localhost:8000/orders/user?email=${userEmail}`
+      );
       setOrders(response.data);
-      alert('Order cancelled successfully');
+      alert("Order cancelled successfully");
     } catch (error) {
-      alert('Failed to cancel order');
+      alert("Failed to cancel order");
     }
   };
 
-  const handleReturnOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to request a return?')) {
-      return;
-    }
-
-    try {
-      // Log the request being made
-      console.log('Making request to:', `http://localhost:8000/orders/${orderId}/status`);
-
-      const response = await axios.put(`http://localhost:8000/orders/${orderId}/status`, {
-        status: 'return_requested'
-      });
-
-      // Log successful response
-      console.log('Return response:', response.data);
-
-      // Refresh orders list
-      const ordersResponse = await axios.get(`http://localhost:8000/orders/user?email=${userEmail}`);
-      setOrders(ordersResponse.data);
-      alert('Return request submitted successfully');
-    } catch (error) {
-      console.error('Full error details:', error);
-      alert('Failed to submit return request');
-    }
+  const handleReviewProduct = (orderId) => {
+    navigate(`/review-product/${orderId}`);
   };
-
 
   const renderCarousel = (item, orderId, itemIndex) => {
     const images = Array.isArray(item.images) ? item.images : [item.image];
@@ -147,7 +102,10 @@ const ViewOrders = () => {
 
         <div className="carousel-inner h-100">
           {images.map((image, idx) => (
-            <div key={idx} className={`carousel-item h-100 ${idx === 0 ? "active" : ""}`}>
+            <div
+              key={idx}
+              className={`carousel-item h-100 ${idx === 0 ? "active" : ""}`}
+            >
               <img
                 src={`http://localhost:8000/upload_images/${image}`}
                 className="d-block w-100 h-100"
@@ -160,12 +118,28 @@ const ViewOrders = () => {
 
         {images.length > 1 && (
           <>
-            <button className="carousel-control-prev" type="button" data-bs-target={`#${carouselId}`} data-bs-slide="prev">
-              <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+            <button
+              className="carousel-control-prev"
+              type="button"
+              data-bs-target={`#${carouselId}`}
+              data-bs-slide="prev"
+            >
+              <span
+                className="carousel-control-prev-icon"
+                aria-hidden="true"
+              ></span>
               <span className="visually-hidden">Previous</span>
             </button>
-            <button className="carousel-control-next" type="button" data-bs-target={`#${carouselId}`} data-bs-slide="next">
-              <span className="carousel-control-next-icon" aria-hidden="true"></span>
+            <button
+              className="carousel-control-next"
+              type="button"
+              data-bs-target={`#${carouselId}`}
+              data-bs-slide="next"
+            >
+              <span
+                className="carousel-control-next-icon"
+                aria-hidden="true"
+              ></span>
               <span className="visually-hidden">Next</span>
             </button>
           </>
@@ -176,14 +150,18 @@ const ViewOrders = () => {
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
-      case 'placed': return 'bg-info';
-      case 'shipped': return 'bg-primary';
-      case 'in_transit': return 'bg-warning';
-      case 'delivered': return 'bg-success';
-      case 'cancelled': return 'bg-danger';
-      case 'return_requested': return 'bg-secondary';
-      case 'returned': return 'bg-dark';
-      default: return 'bg-dark text-dark';
+      case "placed":
+        return "bg-info";
+      case "shipped":
+        return "bg-primary";
+      case "in_transit":
+        return "bg-warning";
+      case "delivered":
+        return "bg-success";
+      case "cancelled":
+        return "bg-danger";
+      default:
+        return "bg-secondary";
     }
   };
 
@@ -219,15 +197,25 @@ const ViewOrders = () => {
           <div key={order._id} className="card mb-4">
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Order ID: {order._id}</h5>
-              <span className={`badge ${getStatusBadgeColor(order.status)} text-white`}>
-                {order.status.replace(/_/g, ' ').toUpperCase()}
+              <span
+                className={`badge ${getStatusBadgeColor(
+                  order.status
+                )} text-white`}
+              >
+                {order.status.replace(/_/g, " ").toUpperCase()}
               </span>
             </div>
             <div className="card-body">
               <div className="row mb-3">
                 <div className="col-md-6">
-                  <p><strong>Order Date:</strong> {new Date(order.order_date).toLocaleString()}</p>
-                  <p><strong>Total Amount:</strong> ${order.total_amount.toFixed(2)}</p>
+                  <p>
+                    <strong>Order Date:</strong>{" "}
+                    {new Date(order.order_date).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>Total Amount:</strong> $
+                    {order.total_amount.toFixed(2)}
+                  </p>
                 </div>
                 <div className="col-md-6 text-md-end">
                   <div className="d-flex gap-2 justify-content-md-end">
@@ -243,20 +231,20 @@ const ViewOrders = () => {
                     >
                       <i className="bi bi-truck me-1"></i> Track Order
                     </button>
+                    {order.status === "delivered" && (
+                      <button
+                        className="btn btn-warning btn-sm"
+                        onClick={() => handleReviewProduct(order._id)}
+                      >
+                        <i className="bi bi-pencil me-1"></i> Review Product
+                      </button>
+                    )}
                     {order.can_cancel && (
                       <button
                         className="btn btn-danger btn-sm"
                         onClick={() => handleCancelOrder(order._id)}
                       >
                         <i className="bi bi-x-circle me-1"></i> Cancel
-                      </button>
-                    )}
-                    {order.can_return && (
-                      <button
-                        className="btn btn-warning btn-sm"
-                        onClick={() => handleReturnOrder(order._id)}
-                      >
-                        <i className="bi bi-arrow-return-left me-1"></i> Return
                       </button>
                     )}
                   </div>
@@ -275,13 +263,15 @@ const ViewOrders = () => {
                           <div className="col-md-8">
                             <h5 className="card-title">{item.product_name}</h5>
                             <p className="card-text">
-                              Quantity: {item.quantity} × ${item.price.toFixed(2)}
+                              Quantity: {item.quantity} × $
+                              {item.price.toFixed(2)}
                             </p>
                           </div>
                           <div className="col-md-4 text-md-end">
                             <p className="card-text">
                               <strong>
-                                Subtotal: ${(item.quantity * item.price).toFixed(2)}
+                                Subtotal: $
+                                {(item.quantity * item.price).toFixed(2)}
                               </strong>
                             </p>
                           </div>

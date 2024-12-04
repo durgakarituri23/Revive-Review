@@ -13,7 +13,8 @@ const SellerRegister = () => {
     address: '',
     taxId: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    mfa_enabled: false
   });
 
   const [errors, setErrors] = useState({});
@@ -61,8 +62,6 @@ const SellerRegister = () => {
       case 'address':
         return value.length < 10
           ? 'Please enter a complete address (at least 10 characters)'
-          : !/^[A-Za-z0-9\s\-,.'#]+$/.test(value)
-          ? 'Address contains invalid characters'
           : '';
 
       case 'taxId':
@@ -90,10 +89,9 @@ const SellerRegister = () => {
     }
   };
 
-  // Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
     // Special handling for phone numbers
     if (name === 'phone') {
       const numericValue = value.replace(/\D/g, '').slice(0, 10);
@@ -109,19 +107,19 @@ const SellerRegister = () => {
     }
     
     // Validate field on change
-    setErrors(prev => ({
-      ...prev,
-      [name]: validateField(name, name === 'phone' ? value.replace(/\D/g, '') : value)
-    }));
-
-    // Special case for confirm password
-    if (name === 'password') {
       setErrors(prev => ({
         ...prev,
-        confirmPassword: formData.confirmPassword 
-          ? validateField('confirmPassword', formData.confirmPassword)
-          : prev.confirmPassword
+      [name]: validateField(name, name === 'phone' ? value.replace(/\D/g, '') : value)
       }));
+
+    // Special case for confirm password
+      if (name === 'password') {
+        setErrors(prev => ({
+          ...prev,
+          confirmPassword: formData.confirmPassword 
+            ? validateField('confirmPassword', formData.confirmPassword)
+            : prev.confirmPassword
+        }));
     }
   };
 
@@ -129,8 +127,10 @@ const SellerRegister = () => {
   const validateForm = () => {
     const newErrors = {};
     Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
+      if (key !== 'mfa_enabled') {
+        const error = validateField(key, formData[key]);
+        if (error) newErrors[key] = error;
+      }
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -154,7 +154,8 @@ const SellerRegister = () => {
         password: formData.password,
         business_name: formData.businessName,
         address: formData.address,
-        tax_id: formData.taxId
+        tax_id: formData.taxId,
+        mfa_enabled: formData.mfa_enabled
       });
 
       if (response.status === 200 || response.status === 201) {
@@ -187,205 +188,240 @@ const SellerRegister = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <h2 className="text-center mb-4">Seller Registration</h2>
-          {success ? (
-            <div className="alert alert-success text-center" role="alert">
-              Registration successful! Redirecting to login page...
-            </div>
-          ) : (
-            <form onSubmit={handleRegister} noValidate>
-              <div className="mb-3">
-                <label htmlFor="firstName" className="form-label">First Name</label>
-                <input
-                  type="text"
-                  className={getInputClassName('firstName')}
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.firstName && (
-                  <div className="invalid-feedback">{errors.firstName}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="lastName" className="form-label">Last Name</label>
-                <input
-                  type="text"
-                  className={getInputClassName('lastName')}
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.lastName && (
-                  <div className="invalid-feedback">{errors.lastName}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="email" className="form-label">Email</label>
-                <input
-                  type="email"
-                  className={getInputClassName('email')}
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.email && (
-                  <div className="invalid-feedback">{errors.email}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="phone" className="form-label">Phone</label>
-                <input
-                  type="tel"
-                  className={getInputClassName('phone')}
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  maxLength="10"
-                  required
-                  disabled={isLoading}
-                />
-                {errors.phone && (
-                  <div className="invalid-feedback">{errors.phone}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="businessName" className="form-label">Business Name</label>
-                <input
-                  type="text"
-                  className={getInputClassName('businessName')}
-                  id="businessName"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.businessName && (
-                  <div className="invalid-feedback">{errors.businessName}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="address" className="form-label">Business Address</label>
-                <input
-                  type="text"
-                  className={getInputClassName('address')}
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.address && (
-                  <div className="invalid-feedback">{errors.address}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="taxId" className="form-label">Tax ID</label>
-                <input
-                  type="text"
-                  className={getInputClassName('taxId')}
-                  id="taxId"
-                  name="taxId"
-                  value={formData.taxId}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.taxId && (
-                  <div className="invalid-feedback">{errors.taxId}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="password" className="form-label">Password</label>
-                <input
-                  type="password"
-                  className={getInputClassName('password')}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.password && (
-                  <div className="invalid-feedback">{errors.password}</div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-                <input
-                  type="password"
-                  className={getInputClassName('confirmPassword')}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-                {errors.confirmPassword && (
-                  <div className="invalid-feedback">{errors.confirmPassword}</div>
-                )}
-              </div>
-
-              {errors.submit && (
-                <div className="alert alert-danger" role="alert">
-                  {errors.submit}
+        <div style={{ backgroundColor: '#f8f9fa', padding: '2rem 0' }}>
+          <div className="container">
+            <div className="row">
+              {/* Left Side - Seller Information */}
+              <div className="col-lg-5 mb-4 mb-lg-0">
+                <div className="pe-lg-4">
+                  <h2 className="display-6 mb-4" style={{ color: '#0d6efd' }}>Start Your Sustainable Fashion Business</h2>
+                  
+                  <div className="card shadow-sm border-0 mb-4">
+                    <div className="card-body">
+                      <h5 className="card-title" style={{ color: '#198754' }}>Benefits of Joining</h5>
+                      <ul className="list-unstyled">
+                        <li className="mb-2">🌟 Access to eco-conscious customers</li>
+                        <li className="mb-2">💰 Competitive commission rates</li>
+                        <li className="mb-2">📊 Detailed analytics dashboard</li>
+                      </ul>
+                    </div>
+                  </div>
+    
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <h5 className="card-title" style={{ color: '#0d6efd' }}>What You Need</h5>
+                      <ul className="list-unstyled">
+                        <li className="mb-2">📝 Valid business registration</li>
+                        <li className="mb-2">🏢 Business address</li>
+                        <li className="mb-2">🔢 Tax identification number</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              <button 
-                type="submit" 
-                className="btn btn-primary w-100 mb-3" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Registering...
-                  </>
-                ) : 'Register as Seller'}
-              </button>
-              
-              <div className="text-center">
-                Already have an account? {' '}
-                <button 
-                  onClick={() => navigate('/login')} 
-                  className="btn btn-link p-0"
-                  type="button"
-                >
-                  Login here
-                </button>
               </div>
-            </form>
-          )}
+    
+              {/* Right Side - Registration Form */}
+              <div className="col-lg-7">
+                <div className="card shadow border-0 p-4">
+                  <h2 className="text-center mb-4" style={{ color: '#0d6efd' }}>Seller Registration</h2>
+                  {success ? (
+                    <div className="alert alert-success text-center">
+                      Registration successful! Redirecting to login page...
+                    </div>
+                  ) : (
+                    <form onSubmit={handleRegister} noValidate>
+                      <div className="row g-3">
+                        {/* Personal Information */}
+                        <div className="col-md-6">
+                          <label className="form-label">First Name</label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.firstName ? 'is-invalid' : formData.firstName ? 'is-valid' : ''}`}
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+                        </div>
+    
+                        <div className="col-md-6">
+                          <label className="form-label">Last Name</label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.lastName ? 'is-invalid' : formData.lastName ? 'is-valid' : ''}`}
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+                        </div>
+    
+                        <div className="col-md-6">
+                          <label className="form-label">Email</label>
+                          <input
+                            type="email"
+                            className={`form-control ${errors.email ? 'is-invalid' : formData.email ? 'is-valid' : ''}`}
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                        </div>
+    
+                        <div className="col-md-6">
+                          <label className="form-label">Phone</label>
+                          <input
+                            type="tel"
+                            className={`form-control ${errors.phone ? 'is-invalid' : formData.phone ? 'is-valid' : ''}`}
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            maxLength="10"
+                            disabled={isLoading}
+                          />
+                          {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                        </div>
+    
+                        {/* Business Information */}
+                        <div className="col-12">
+                          <label className="form-label">Business Name</label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.businessName ? 'is-invalid' : formData.businessName ? 'is-valid' : ''}`}
+                            name="businessName"
+                            value={formData.businessName}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.businessName && <div className="invalid-feedback">{errors.businessName}</div>}
+                        </div>
+    
+                        <div className="col-12">
+                          <label className="form-label">Business Address</label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.address ? 'is-invalid' : formData.address ? 'is-valid' : ''}`}
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.address && <div className="invalid-feedback">{errors.address}</div>}
+                        </div>
+    
+                        <div className="col-12">
+                          <label className="form-label">Tax ID</label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.taxId ? 'is-invalid' : formData.taxId ? 'is-valid' : ''}`}
+                            name="taxId"
+                            value={formData.taxId}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.taxId && <div className="invalid-feedback">{errors.taxId}</div>}
+                        </div>
+    
+                        {/* Password Fields */}
+                        <div className="col-md-6">
+                          <label className="form-label">Password</label>
+                          <input
+                            type="password"
+                            className={`form-control ${errors.password ? 'is-invalid' : formData.password ? 'is-valid' : ''}`}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                        </div>
+    
+                        <div className="col-md-6">
+                          <label className="form-label">Confirm Password</label>
+                          <input
+                            type="password"
+                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : formData.confirmPassword ? 'is-valid' : ''}`}
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                          />
+                          {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+                        </div>
+    
+                        {/* MFA Toggle */}
+                        <div className="col-12">
+                          <div className="form-check">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id="mfa_enabled"
+                              name="mfa_enabled"
+                              checked={formData.mfa_enabled}
+                              onChange={handleChange}
+                              disabled={isLoading}
+                            />
+                            <label className="form-check-label" htmlFor="mfa_enabled">
+                              Enable Two-Factor Authentication
+                            </label>
+                            <small className="form-text text-muted d-block">
+                              When enabled, you'll need to verify your identity using a code sent to your email each time you log in.
+                            </small>
+                          </div>
+                        </div>
+    
+                        {/* Error Message */}
+                        {errors.submit && (
+                          <div className="col-12">
+                            <div className="alert alert-danger">{errors.submit}</div>
+                          </div>
+                        )}
+    
+                        {/* Submit Button */}
+                        <div className="col-12">
+                          <button 
+                            type="submit" 
+                            className="btn btn-primary w-100"
+                            disabled={isLoading}
+                            style={{
+                              padding: '0.75rem',
+                              fontWeight: '500',
+                              transition: 'transform 0.2s'
+                            }}
+                          >
+                            {isLoading ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" />
+                                Registering...
+                              </>
+                            ) : 'Register as Seller'}
+                          </button>
+                        </div>
+    
+                        {/* Login Link */}
+                        <div className="col-12 text-center">
+                          Already have an account?{' '}
+                          <button 
+                            type="button"
+                            className="btn btn-link p-0"
+                            onClick={() => navigate('/login')}
+                          >
+                            Login here
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      );
+    };
+    
 
 export default SellerRegister;

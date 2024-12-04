@@ -34,5 +34,4 @@ async def get_order_route(order_id: str):
 @router.put("/{order_id}/status", response_model=OrderModel)
 async def update_order_status_route(order_id: str, status_update: OrderUpdateSchema):
     """Update order status"""
-    print(f"Updating order {order_id} to status: {status_update.status}")
     return await update_order_status(order_id, status_update.status)

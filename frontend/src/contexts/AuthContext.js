@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
                     }
                 });
                 setUser(response.data);
-                // Store email when fetching user details
                 localStorage.setItem('userEmail', response.data.email);
                 localStorage.setItem('userRole', response.data.role);
             } catch (error) {
@@ -40,11 +39,47 @@ export const AuthProvider = ({ children }) => {
                 password
             });
 
+            // If MFA is required, return the response without setting the token
+            if (response.data.requires_mfa) {
+                return response.data;
+            }
+
+            // If no MFA or MFA verification successful, set the token
             if (response.data.access_token) {
                 localStorage.setItem('token', response.data.access_token);
                 await fetchUserDetails();
-                return response.data;
             }
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    // Function to handle MFA verification
+    const verifyMFA = async (email, code) => {
+        try {
+            const response = await axios.post('http://localhost:8000/verify-mfa', {
+                email,
+                code
+            });
+
+            if (response.data.access_token) {
+                localStorage.setItem('token', response.data.access_token);
+                await fetchUserDetails();
+            }
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    // Function to resend MFA code
+    const resendMFACode = async (email) => {
+        try {
+            const response = await axios.post('http://localhost:8000/resend-mfa-code', {
+                email: email
+            });
+            return response.data;
         } catch (error) {
             throw error;
         }
@@ -68,6 +103,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
+        verifyMFA,
+        resendMFACode,
         userEmail: user?.email || localStorage.getItem('userEmail'),
         userRole: user?.role || localStorage.getItem('userRole')
     };

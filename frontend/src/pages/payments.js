@@ -6,6 +6,9 @@ import { useCart } from '../contexts/CartContext';
 const Payments = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
   const { cart, total } = location.state || { cart: [], total: "0.00" };
   const { updateCart } = useCart();
 
@@ -56,8 +59,39 @@ const Payments = () => {
     const methodDetails = paymentMethods.find(method => method.type === methodType);
     setSelectedMethodDetails(methodDetails || null);
   };
+  const handleApplyCoupon = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/coupons/validate/${couponCode}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-  const handlePayment = async () => {
+      if (!response.ok) {
+        const error = await response.json();
+        setCouponError(error.detail);
+        setAppliedCoupon(null);
+        return;
+      }
+
+      const data = await response.json();
+      setAppliedCoupon(data);
+      setCouponError('');
+    } catch (error) {
+      setCouponError('Failed to apply coupon');
+      setAppliedCoupon(null);
+    }
+  };
+
+  const calculateTotal = () => {
+    let finalTotal = parseFloat(total);
+    if (appliedCoupon) {
+      finalTotal -= (finalTotal * appliedCoupon.discount_percentage) / 100;
+    }
+    return finalTotal.toFixed(2);
+  };
+
+  async function handlePayment() {
     if (!selectedPaymentMethod) {
       alert("Please select a payment method to proceed.");
       return;
@@ -80,11 +114,19 @@ const Payments = () => {
         )
       } : { type: 'cash' };
 
-      // Update payment status with payment method
+      const shippingAddress = {
+        name: userDetails.name,
+        address: userDetails.address,
+        postal_code: userDetails.postal_code
+      };
+
+      // Update payment status with payment method and shipping address
       const response = await axios.put(`http://localhost:8000/cart/payment-status`, {
         email: userEmail,
         buyed: true,
-        payment_method: paymentMethodDetails  // Make sure this is included
+        payment_method: paymentMethodDetails,
+        shipping_address: shippingAddress ,
+        coupon_code: appliedCoupon ? couponCode : null
       });
 
       if (response.data.message) {
@@ -99,8 +141,7 @@ const Payments = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
+  }
 
 
   const handleInputChange = (e) => {
@@ -271,7 +312,58 @@ const Payments = () => {
             </div>
           </div>
 
-          {/* Confirm Payment Button */}
+          {/* Coupon Code */}
+          <div className="card shadow-sm mb-4">
+            <div className="card-body">
+              <h4>Apply Coupon</h4>
+              <div className="input-group mb-3">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                />
+                <button 
+                  className="btn btn-outline-primary" 
+                  type="button"
+                  onClick={handleApplyCoupon}
+                >
+                  Apply
+                </button>
+              </div>
+              {couponError && (
+                <div className="alert alert-danger">{couponError}</div>
+              )}
+              {appliedCoupon && (
+                <div className="alert alert-success">
+                  Coupon applied! {appliedCoupon.discount_percentage}% discount
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="card shadow-sm mb-4">
+            <div className="card-body">
+              <h4>Order Summary</h4>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Subtotal:</span>
+                <span>${total}</span>
+              </div>
+              {appliedCoupon && (
+                <div className="d-flex justify-content-between mb-2 text-success">
+                  <span>Discount:</span>
+                  <span>-${(total * appliedCoupon.discount_percentage / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="d-flex justify-content-between fw-bold">
+                <span>Total:</span>
+                <span>${calculateTotal()}</span>
+              </div>
+            </div>
+          </div>
+
           <button
             onClick={handlePayment}
             className="btn btn-primary btn-lg w-100"

@@ -4,9 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-
-from src.routes import auth_routes, product_routes, user_routes, cart_routes, order_routes, complaint_routes
-
+from src.routes import seller_routes
+from src.routes import auth_routes, product_routes, user_routes, cart_routes, order_routes, complaint_routes, contactus_routes, coupon_routes, reviewproduct_routes
 app = FastAPI()
 
 # CORS settings
@@ -42,8 +41,10 @@ app.include_router(cart_routes.router)
 app.include_router(user_routes.router)
 app.include_router(order_routes.router)
 app.include_router(complaint_routes.router, prefix="/complaints", tags=["Complaints"])
-
-
+app.include_router(contactus_routes.router)
+app.include_router(coupon_routes.router)
+app.include_router(reviewproduct_routes.router)
+app.include_router(seller_routes.router)
 @app.get("/")
 async def root():
     return {"message": "Welcome to the E-commerce API"}
