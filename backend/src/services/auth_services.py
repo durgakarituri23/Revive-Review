@@ -293,6 +293,7 @@ async def getUserDetails(email):
         if user["role"] == "seller"
         else None,
         "tax_id": user.get("tax_id") if user["role"] == "seller" else None,
+        "mfa_enabled": user.get("mfa_enabled", False),
     }
 
 
@@ -308,6 +309,7 @@ async def updateDetails(details):
         "phone": details.phone,
         "address": details.address,
         "postal_code": details.postal_code,
+        "mfa_enabled": details.mfa_enabled,
     }
 
     # Include role-specific fields if user is a seller

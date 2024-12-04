@@ -76,6 +76,7 @@ class UserDetails(BaseModel):
     postal_code: Optional[str] = None
     business_name: Optional[str] = None
     tax_id: Optional[str] = None
+    mfa_enabled: bool=False
 
 class UpdateUserDetails(BaseModel):
     email: EmailStr
@@ -86,6 +87,7 @@ class UpdateUserDetails(BaseModel):
     postal_code: Optional[str] = None
     business_name: Optional[str] = None
     tax_id: Optional[str] = None
+    mfa_enabled: bool=False
 
 # New schemas for admin operations
 class UserCreate(BaseModel):
