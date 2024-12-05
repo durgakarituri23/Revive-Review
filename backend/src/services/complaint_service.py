@@ -1,7 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from src.config.database import complaint_collection, users
-from src.schemas.complaint import ComplaintCreate
+from src.schemas.complaint_schema import ComplaintCreate
 from fastapi import HTTPException, BackgroundTasks
 from typing import Optional
 from bson import ObjectId

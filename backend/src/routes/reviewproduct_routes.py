@@ -6,7 +6,7 @@ from src.config.database import reviews_collection
 # Initialize the FastAPI Router
 router = APIRouter()
 from fastapi import APIRouter, HTTPException
-from src.models.reviewproduct import Review
+from src.models.review import Review
 from src.services.reviewproduct_service import find_existing_review, insert_review
 
 router = APIRouter()
