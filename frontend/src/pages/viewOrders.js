@@ -231,7 +231,7 @@ const ViewOrders = () => {
                     >
                       <i className="bi bi-truck me-1"></i> Track Order
                     </button>
-                    {order.status === "delivered" && (
+                    {(order.status === "delivered" || order.status.includes("return")) && (
                       <button
                         className="btn btn-warning btn-sm"
                         onClick={() => handleReviewProduct(order._id)}

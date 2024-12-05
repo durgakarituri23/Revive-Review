@@ -26,6 +26,8 @@ const ReviewProduct = () => {
           setReviewExists(true);
           setRating(result.review.rating); // Pre-fill rating
           setReviewText(result.review.reviewText || ""); // Pre-fill review text or keep it blank
+          setMessageType("success");
+          setMessage("A review for this order has already been submitted.");
         }
       } catch (error) {
         console.error("Error fetching review details:", error);
@@ -181,6 +183,10 @@ const ReviewProduct = () => {
           className={`mt-4 text-center alert ${
             messageType === "error" ? "alert-danger" : "alert-primary"
           }`}
+          style={{
+            border: `2px solid ${messageType === "error" ? "red" : "blue"}`,
+            color: `${messageType === "error" ? "red" : "blue"}`,
+          }}
         >
           {message}
         </p>
