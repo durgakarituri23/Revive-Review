@@ -17,7 +17,7 @@ const HomeContent = () => {
   const navigate = useNavigate();
   const { userEmail, userRole } = useAuth();
   const { cartItems, addToCart, updateCart } = useCart();
-  const ITEMS_PER_PAGE = 6;
+  const ITEMS_PER_PAGE = 8;
 
   const carouselStyle = {
     height: '200px',

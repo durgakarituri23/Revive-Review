@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from src.config.database import complaint_collection
-from src.schemas.complaint import ComplaintCreate, ComplaintResponse, ComplaintCloseRequest
+from src.schemas.complaint_schema import ComplaintCreate, ComplaintResponse, ComplaintCloseRequest
 from typing import List
 from bson import ObjectId
 from typing import Optional
