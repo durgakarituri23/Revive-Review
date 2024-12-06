@@ -13,7 +13,8 @@ R & R aims to keep things simple and easy to use with tools like seller inventor
 
 MVC X LAYERED ARCHITECTURE
 
- ![ntier drawio (1)](https://github.com/user-attachments/assets/5eb7b2f7-438b-4f5d-b40b-f11c2f1c554b)
+ ![ntier](https://github.com/user-attachments/assets/64e7421c-e922-4219-a9aa-5f3c05b38f4b)
+
 
 This architecture follows the N-tier design, which improves maintainability and scalability by giving each layer a distinct role. Using the MVC framework, the Presentation Layer presents data to the user through interfaces such as the Register, Login, and Product Catalog, with controllers handling user inputs. The business logic is managed by the Application Layer via a number of services, including user, product, and authentication management. It serves as an an intermediary between the user interface and the data, sending requests to an appropriate service for processing. The primary business logic is carried out in the Service Layer, which interacts with the Data Layer to handle the retrieval and storing of data in entities such as Users, Products, and Orders. The data access layer, which communicates with the underlying database, is responsible for modifying or accessing data, while the service layer applies business rules to guarantee that user interactions are processed effectively. This design promotes modularity and easier management of complex systems.
 
