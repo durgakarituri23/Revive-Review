@@ -6,7 +6,7 @@ from src.services.product_service import review_product
 from src.schemas.product_schema import UpdateProductRequest
 from src.models.product import ProductModel
 
- """Test suite for product service with focus on product verification functionality"""
+"""Test suite for product service with focus on product verification functionality"""
 @pytest.mark.asyncio
 class TestProductService:
    

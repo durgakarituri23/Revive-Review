@@ -127,3 +127,57 @@ class TestCartService:
                     await add_to_cart(cart_request)
                 assert exc_info.value.status_code == 400
                 assert "Product is not approved for purchase" in str(exc_info.value.detail)
+
+    async def test_clear_cart(self):
+        """
+        Test case for clearing the cart for a user.
+        """
+        # Setup mocks
+        with patch("src.services.buyer_service.verify_buyer", new_callable=AsyncMock) as mock_verify_buyer:
+            with patch("src.config.database.cart.update_one", new_callable=AsyncMock) as mock_update_cart:
+                mock_verify_buyer.return_value = {"email": "test@buyer.com"}
+                mock_update_cart.return_value = AsyncMock(modified_count=1)
+
+                # Execute
+                response = await clear_cart("test@buyer.com")
+
+                # Assertions
+                assert response["message"] == "Cart cleared successfully"
+                mock_update_cart.assert_called_once_with(
+                    {"email": "test@buyer.com"},
+                    {
+                        "$set": {
+                            "products": [],
+                            "buyed": True,
+                            "purchased_at": str(datetime.utcnow()),
+                        }
+                    },
+                )
+
+    async def test_fetch_cart_items(self):
+        """
+        Test case for fetching cart items with their details.
+        """
+        # Mock data
+        mock_cart = {
+            "email": "test@buyer.com",
+            "products": [{"productId": "101", "quantity": 2}],
+        }
+        mock_product = [{"_id": "101", "price": 10.0, "product_name": "Test Product"}]
+
+        # Setup mocks
+        with patch("src.services.buyer_service.verify_buyer", new_callable=AsyncMock) as mock_verify_buyer:
+            with patch("src.config.database.cart.find_one", new_callable=AsyncMock) as mock_find_cart:
+                with patch("src.config.database.product_collection.find", new_callable=AsyncMock) as mock_find_products:
+                    mock_verify_buyer.return_value = {"email": "test@buyer.com"}
+                    mock_find_cart.return_value = mock_cart
+                    mock_find_products.return_value = mock_product
+
+                    # Execute
+                    response = await fetch_cart_items("test@buyer.com")
+
+                    # Assertions
+                    assert len(response) == 1
+                    assert response[0]["productId"] == "101"
+                    assert response[0]["quantity"] == 2
+                    assert response[0]["price"] == 10.0                                            
